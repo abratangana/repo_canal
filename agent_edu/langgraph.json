@@ -1,0 +1,6 @@
+{
+    "dependencies":["."],
+    "graphs":{
+        "sqlagent":"./agent_edu/rag_avanzado/estructurado/sql_agent.py:graph"
+    }
+}
