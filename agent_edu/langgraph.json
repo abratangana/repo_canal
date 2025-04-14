@@ -1,6 +1,0 @@
-{
-    "dependencies":["."],
-    "graphs":{
-        "sqlagent":"./rag_avanzado/estructurado/multiagent_sql.py:graph"
-    }
-}
