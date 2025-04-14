@@ -1,0 +1,399 @@
+{
+  "name": "email_jarvis_yt",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -620,
+        -160
+      ],
+      "id": "a6c0ed20-7373-47a2-ab2d-f332a7ee580e",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $fromAI(\"ID\",\"the message ID\") }}",
+        "message": "={{ $fromAI(\"emailBody\") }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -520,
+        260
+      ],
+      "id": "84a8d132-58bc-491c-8978-9456ea858777",
+      "name": "Respuesta",
+      "webhookId": "fa8d0d09-0821-44f8-9f8c-be8aacef7b48",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NY1DWGGGiRkyOwV7",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "=# Resumen\n\nEres un asistente de gestión de correos electrónicos. Todos los correos deben estar formateados profesionalmente en HTML y deben finalizar con la firma \"Abraham Pérez\".\n\n## Herramientas de Gestión de Correos\n\n- \"Envio\" → Para enviar correos electrónicos.  \n- \"CrearBorrador\" → Para crear un borrador si el usuario lo solicita. \n- \"ObtenerEmails\" → Para obtener correos electrónicos cuando se requiera.\n- \"ObtenerEtiquetas\" → Para obtener las etiquetas de los correos.  \n- \"MarcarNoLeido\" → Para marcar un correo como no leído.  \n  - Primero, usa \"Obtener Emails\" para obtener el ID del mensaje que se debe marcar.  \n- \"AddEtiquetas\" → Para etiquetar un correo.  \n  - Primero, usa \"ObtenerEmails\" para obtener el ID del correo.  \n  - Luego, usa \"ObtenerEtiquetas\" para obtener el ID de la etiqueta.  \n- \"Respuesta\" → Para responder a un correo.  \n  - Primero, usa \"ObtenerEmails\" para obtener el ID del correo al que se responderá.  \n\n## Notas Finales  \n- Fecha y hora actual: {{ $now }}"
+        }
+      },
+      "id": "c58d807e-3fa6-488d-ac5a-122c153b0416",
+      "name": "Agente de Email",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        -360,
+        -160
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "39c2f302-03be-4464-a17a-d7cc481d6d44",
+              "name": "=response",
+              "value": "={{$json.output}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "15b08ea4-5bee-4429-a329-61d1a5a798c2",
+      "name": "✅",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        -240
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7ab380a2-a8d3-421c-ab4e-748ea8fb7904",
+              "name": "response",
+              "value": "No se puede realizar la tarea. Por favor, inténtalo de nuevo.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "74b2e7b3-79bb-4087-946c-93e5737d29fa",
+      "name": "❌",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $fromAI(\"subject\") }}",
+        "emailType": "html",
+        "message": "={{ $fromAI(\"emailBody\") }}",
+        "options": {
+          "sendTo": "={{ $fromAI(\"emailAddress\") }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -180,
+        320
+      ],
+      "id": "cdb72e67-1236-4ca0-94a8-8d542424ea18",
+      "name": "CrearBorrador",
+      "webhookId": "1313223a-d6d1-4e8f-bab9-1a72b799e0d0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NY1DWGGGiRkyOwV7",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": "={{ $fromAI(\"limit\",\"Cuantos emails quiere el usuario\") }}",
+        "simple": false,
+        "filters": {
+          "sender": "={{ $fromAI(\"sender\",\"Quienes son los remitentes de los correos electrónicos.\") }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -20,
+        280
+      ],
+      "id": "35e319dd-bd86-46b5-b526-2b4bd9651c48",
+      "name": "ObtenerEmails",
+      "webhookId": "4690e442-45f5-4d17-bc5a-0ee0fd7c047c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NY1DWGGGiRkyOwV7",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "label",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        120,
+        220
+      ],
+      "id": "062fd662-8c69-4783-bc57-16ec250c6fe0",
+      "name": "ObtenerEtiquetas",
+      "webhookId": "54092a70-dc88-4e5e-a796-848e2f6df208",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NY1DWGGGiRkyOwV7",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $fromAI(\"emailAddress\") }}",
+        "subject": "={{ $fromAI(\"subject\") }}",
+        "message": "={{ $fromAI(\"emailBody\") }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -680,
+        200
+      ],
+      "id": "590cb249-d18e-4b35-ae1b-f70373cb5b64",
+      "name": "Envio",
+      "webhookId": "9e666748-4b9c-4233-ae70-100e70ef76ca",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NY1DWGGGiRkyOwV7",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $fromAI(\"ID\",\"the ID of the message\") }}",
+        "labelIds": "={{ $fromAI('LabelID') }}"
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        -340,
+        320
+      ],
+      "id": "f65be392-3b1b-4922-bf94-d68a7d6f4395",
+      "name": "AddEtiqueta",
+      "webhookId": "eb9ae0eb-2b5e-4959-a8d7-a0a59875b676",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NY1DWGGGiRkyOwV7",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "markAsUnread",
+        "messageId": "={{ $fromAI(\"messageID\") }}"
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        280,
+        140
+      ],
+      "id": "285922f1-766b-4882-a29a-67b304289f99",
+      "name": "MarcarNoLeido",
+      "webhookId": "875d650c-7bc3-47f5-981c-1c4a340dad36",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NY1DWGGGiRkyOwV7",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {}
+      },
+      "id": "af1f18fd-d339-4c0f-a8be-01e5c790201a",
+      "name": "OpenAI Chat Model3",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -840,
+        100
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "37gQNl7CXDgV1eh7",
+          "name": "openai_bryan"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Agente de Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respuesta": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de Email",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente de Email": {
+      "main": [
+        [
+          {
+            "node": "✅",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "❌",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CrearBorrador": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de Email",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ObtenerEmails": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de Email",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ObtenerEtiquetas": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de Email",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envio": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de Email",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AddEtiqueta": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de Email",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MarcarNoLeido": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de Email",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente de Email",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b96b0730-84b6-4b5e-bdc7-c71aaec8dd73",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "UKkbUIUTejLfPeqO",
+  "tags": []
+}

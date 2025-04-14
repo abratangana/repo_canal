@@ -1,0 +1,326 @@
+{
+  "name": "cotizaciones",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "correo"
+            },
+            {
+              "name": "producto"
+            },
+            {
+              "name": "solicitud"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        260,
+        -160
+      ],
+      "id": "c2594129-501c-480a-9003-fa2338aa20fc",
+      "name": "Workflow Input Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Este es el correo electronico al que debes mandar la cotización:{{ $json.correo }} \n\nEste es el producto que desea cotizar el usuario: {{ $json.producto }}\n\nEstos son los detalles de la orden para hacer una cotizacion mas precisa:\n{{ $json.solicitud }}\n\ny recuerda poner siempre la suma total de la cotizacion en un solo numero",
+        "options": {
+          "systemMessage": "=ERES UN EXPERTO AGENTE DE COTIZACIONES PARA LA TIENDA REALTIME, CAPACITADO PARA GENERAR PRESUPUESTOS PRECISOS BASADOS EN LOS CAMPOS PROPORCIONADOS Y UTILIZANDO LAS HERRAMIENTAS DISPONIBLES.\n\n### INSTRUCCIONES ###\n\n1. **PROCESAMIENTO DE ORDEN:**\n   - IDENTIFICA los siguientes campos de entrada:\n     - **Producto:** {{ $json.producto }}\n     - **Detalles de la orden:** {{ $json.solicitud }}\n   - UTILIZA la cadena de pensamiento estructurada para garantizar cotizaciones precisas:\n     1. **Comprender:** Analiza el producto y los detalles de la orden.\n     2. **Consultar:** Accede a las herramientas apropiadas para obtener la información precisa.\n     3. **Calcular:** Suma todos los costos asociados para obtener el monto total.\n     4. **Confirmar:** Verifica la precisión de la información antes de emitir la respuesta.\n\n2. **HERRAMIENTAS DISPONIBLES Y REGLAS DE USO:**\n\n   - **Base_conocimientos:**\n     - CONSULTA esta herramienta para obtener costos adicionales según los detalles de la orden.\n     - EJEMPLO:\n       - Detalle de orden: 'vive en china y quiere servicio postventa'\n       - Respuesta esperada: 'El envío sería 300$ y el servicio postventa 200$, dando un total de **500$**.'\n     - INCLUYE siempre estos costos en la cotización final.\n\n   - **Productos:**\n     - ACCEDE a esta herramienta para OBTENER el precio exacto del producto proporcionado.\n     - ES OBLIGATORIO garantizar que el precio del producto es preciso antes de incluirlo en la cotización.\n\n   - **Gmail:**\n     - ENVÍA la cotización al cliente mediante correo electrónico una vez calculado el monto total.\n     - ESTE PASO ES OBLIGATORIO.\n\n   - **Sheets:**\n     - REGISTRA todos los campos de la orden y la cotización final una vez enviada al cliente.\n     - ASEGÚRATE de que los datos estén correctamente organizados antes de subirlos.\n\n3. **FORMATO DE RESPUESTA:**\n   - PROPORCIONA una respuesta clara con el desglose de costos.\n   - EJEMPLO:\n     - Producto: Laptop Gaming - $1200\n     - Envío: $100\n     - Servicio postventa: $50\n     - **Monto total: $1350**\n\n4. **REGLAS OBLIGATORIAS:**\n   - SIEMPRE proporcionar el monto total en la respuesta.\n   - NO OMITIR ningún costo relevante de la cotización.\n   - ASEGURARSE de la precisión del precio del producto antes de incluirlo.\n\n### LO QUE NO SE DEBE HACER ###\n\n- **NUNCA** proporcionar precios estimados sin consultar las herramientas correspondientes.\n- **NO OMITIR** el envío de la cotización por Gmail.\n- **NUNCA** dejar de registrar la cotización en Sheets.\n- **NO RESPONDER** con información incompleta o sin monto total.\n\n### EJEMPLO DE RESPUESTA CORRECTA ###\n\n\"El producto solicitado es 'Smartphone Pro X'. Su precio es de $800. Los costos adicionales según los detalles de la orden son:\n- Envío: $50\n- Seguro: $20\n\nEl monto total de la cotización es de **$870**.\n\nSe ha enviado la cotización por correo electrónico y se ha registrado en nuestra base de datos.\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        500,
+        -160
+      ],
+      "id": "36b1192a-17ee-4c6a-a774-a0a21e6eb83f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        360,
+        60
+      ],
+      "id": "620cf846-f472-4d2a-af34-87603fa0afaf",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Z9xPt4sUBeGVrGds",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "base_conocimientos",
+        "description": "Proporciona una base de conocimientos estructurada y precisa acerca de informacion de RealTime para poder responder preguntas frecuentes que puedan tener los clientes. Se usará para responder cosas como\n\n'Cuanto cuesta el  servicio postventa?'\n'Cuanto cuesta una reparacion?'",
+        "workflowId": {
+          "__rl": true,
+          "value": "fWjgWgwGPGq9U9TF",
+          "mode": "list",
+          "cachedResultName": "base_conocimientos"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        700,
+        60
+      ],
+      "id": "bc6524c1-37e0-46bc-8a55-99024379b96a",
+      "name": "Base de conocimiento"
+    },
+    {
+      "parameters": {
+        "name": "consulta_productos",
+        "description": "Usa esta herramienta para extraer el producto que solicita el usuario y poder hacer una cotizacion mas exacta",
+        "workflowId": {
+          "__rl": true,
+          "value": "uEO5GXMhRKrq6ciH",
+          "mode": "list",
+          "cachedResultName": "productos"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        560,
+        60
+      ],
+      "id": "55cde688-9066-4301-adc9-ed4a3ea68fc4",
+      "name": "Productos"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1xKxAiMoB8LDUqvhYKfFhzXGFr04R9V0fqb3axqa0N-4",
+          "mode": "list",
+          "cachedResultName": "n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xKxAiMoB8LDUqvhYKfFhzXGFr04R9V0fqb3axqa0N-4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1379588443,
+          "mode": "list",
+          "cachedResultName": "n8n-sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xKxAiMoB8LDUqvhYKfFhzXGFr04R9V0fqb3axqa0N-4/edit#gid=1379588443"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "correo": "={{ $json.correo }}",
+            "producto": "={{ $json.producto }}",
+            "detalles": "={{ $json.solicitud }}",
+            "cotizacion total": "={{ $fromAI('monto_total','aqui va el monto total dado por el agente de una cifra') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "correo",
+              "displayName": "correo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "producto",
+              "displayName": "producto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "detalles",
+              "displayName": "detalles",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cotizacion total",
+              "displayName": "cotizacion total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.5,
+      "position": [
+        980,
+        60
+      ],
+      "id": "798e56a7-466b-4dd4-84fe-359f6ef25d3a",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WRLdzUD0W4umXa8N",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Workflow Input Trigger').item.json.correo }}",
+        "subject": "=Cotización de REALTIME para el usario con el correo:  \n{{ $('Workflow Input Trigger').item.json.correo }}\npara comprar el producto: \n{{ $('Workflow Input Trigger').item.json.producto }}\nCon estas especificaciones de orden:\n{{ $('Workflow Input Trigger').item.json.solicitud }}\n",
+        "message": "={{ $fromAI('cuerpo','aqui debes poner la cotizacion completa de la orden') }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        840,
+        60
+      ],
+      "id": "0db1d4ce-ed68-4532-87c4-fb1cdae385e0",
+      "name": "Gmail",
+      "webhookId": "9598da62-f93c-4d00-8df5-06d356b4d2e7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "QwSLUyFO1oFH9rkp",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Workflow Input Trigger": [
+      {
+        "json": {
+          "correo": "abrapg300@gmail.com",
+          "producto": "Anillo de Diamante Esplendor",
+          "solicitud": "envio por avion"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Workflow Input Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Base de conocimiento": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Productos": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d84f7d29-203e-4c64-953f-385744574504",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "xxgErxngqykBVb4x",
+  "tags": []
+}

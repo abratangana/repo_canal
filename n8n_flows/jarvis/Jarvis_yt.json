@@ -1,0 +1,458 @@
+{
+  "name": "Jarvis_yt",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -480,
+        280
+      ],
+      "id": "1eec3358-02f8-4639-aaab-b4c1e7359fd7",
+      "name": "Window Buffer Memory"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Usa esta herramienta para consultar en internet fuentes fiables datos que no poseas",
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n    \"api_key\": \"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\",\n    \"query\": \"{searchTerm}\",\n    \"search_depth\": \"basic\",\n    \"include_answer\": true,\n    \"topic\": \"news\",\n    \"include_raw_content\": true,\n    \"max_results\": 3\n} ",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "searchTerm",
+              "description": "Lo que el usuario ha solicitado buscar en Internet",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        320,
+        360
+      ],
+      "id": "919e5a36-e794-41f9-aadf-4a3bb37361e8",
+      "name": "Tavily"
+    },
+    {
+      "parameters": {
+        "name": "AgenteEmail",
+        "description": "Llama a esta herramienta para cualquier acción relacionada con correos electrónicos.",
+        "workflowId": {
+          "__rl": true,
+          "value": "UKkbUIUTejLfPeqO",
+          "mode": "list",
+          "cachedResultName": "email_jarvis_yt"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        -340,
+        320
+      ],
+      "id": "98fb2fb9-2cd2-44d0-bd31-29beb18f6644",
+      "name": "Agente de Email"
+    },
+    {
+      "parameters": {
+        "name": "AgenteCalendario",
+        "description": "Llama a esta herramienta para cualquier acción relacionada con el calendario.",
+        "workflowId": {
+          "__rl": true,
+          "value": "sANNIeH4Zf4BygFI",
+          "mode": "list",
+          "cachedResultName": "citas_jarvis_yt"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "fecha_especifica": "={{ $fromAI('fecha_especifica','aqui va la fecha especifica en la que el señor Abraham desea hacer la consulta o un aproximado de la misma') }}",
+            "consulta": "={{ $fromAI('consulta','aqui va el motivo de la consulta que desea hacer el señor abraham, ya sea consultar eventos, eminiarlos, crearlos y actualizarlos') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "fecha_especifica",
+              "displayName": "fecha_especifica",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "consulta",
+              "displayName": "consulta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        -180,
+        360
+      ],
+      "id": "924cdade-7c06-4b0b-a73f-4efed1be8b3f",
+      "name": "Agente de Calendario"
+    },
+    {
+      "parameters": {
+        "name": "AgenteContacto",
+        "description": "Llama a esta herramienta para cualquier acción relacionada con contactos.",
+        "workflowId": {
+          "__rl": true,
+          "value": "bx5cp9KUE6BmwD9X",
+          "mode": "list",
+          "cachedResultName": "Contactos_jarvis"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        -20,
+        380
+      ],
+      "id": "61c2eedf-34de-49a0-b8ef-8bfe0880b192",
+      "name": "Agente de Contacto"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        460,
+        300
+      ],
+      "id": "205a6d7b-9761-4388-8003-65da86884b8d",
+      "name": "Calculadora"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        -40
+      ],
+      "id": "2362878a-8127-43d0-bffe-fa8605116a16",
+      "name": "When chat message received",
+      "webhookId": "05c61bc9-ec78-434c-8c3f-68ac776ec65f"
+    },
+    {
+      "parameters": {
+        "name": "base_conocimientos",
+        "description": "Usa esta herramienta para acceder a la información relevante que necesites del señor Abraham y sus actividades diarias para poder ejercer tu rol como asistente personal de la forma más optima posible",
+        "workflowId": {
+          "__rl": true,
+          "value": "l38qVKkkxowNSz70",
+          "mode": "list",
+          "cachedResultName": "conocimientos_jarvis"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        140,
+        380
+      ],
+      "id": "4daae115-1bf5-46ed-903e-9a9737c492b2",
+      "name": "conocimiento base"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -620,
+        220
+      ],
+      "id": "fcaaaa8c-e27a-42b0-985e-b12122944e1c",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "37gQNl7CXDgV1eh7",
+          "name": "openai_bryan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1JuGlkYB59AuZWWl6cMoxShRhJ-NyKl8oyCcPArc7_dc",
+          "mode": "list",
+          "cachedResultName": "retroalimentación",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JuGlkYB59AuZWWl6cMoxShRhJ-NyKl8oyCcPArc7_dc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1JuGlkYB59AuZWWl6cMoxShRhJ-NyKl8oyCcPArc7_dc/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID del usuario": "={{ $json.sessionId }}",
+            "fecha": "={{ $fromAI('fecha','aqui debes poner la fecha exacta en donde se genero la pregunta que no pudiste resolver') }}",
+            "pregunta_no_resuelta": "={{ $fromAI('pregunta_no_resuelta','aqui debes poner la pregunta que no fuiste capaz de resolver') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ID del usuario",
+              "displayName": "ID del usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pregunta_no_resuelta",
+              "displayName": "pregunta_no_resuelta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.5,
+      "position": [
+        600,
+        240
+      ],
+      "id": "aa86a018-0385-4b29-9c36-6a2aab205a28",
+      "name": "retroalimentacion",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vcPD5HDhqn85YMoV",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=# Resumen  \nEres un asistente personal. Tu trabajo es enviar la consulta del usuario a la herramienta correcta. Nunca debes redactar correos electrónicos ni crear resúmenes, solo necesitas llamar a la herramienta adecuada.  \n\n## Herramientas  \n- AgenteEmail: Usa esta herramienta para gestionar correos electrónicos.  \n- AgenteCalendario: Usa esta herramienta para gestionar el calendario.  \n- AgenteContacto: Usa esta herramienta para obtener, actualizar o agregar contactos.  \n- Tavily: Usa esta herramienta para buscar en la web.  \n\n## Reglas  \nAlgunas acciones requieren que primero busques información de contacto. Para las siguientes acciones, debes obtener la información de contacto y enviarla a la herramienta correspondiente:  \n  - Enviar correos electrónicos.  \n  - Redactar correos electrónicos.  \n  - Crear eventos de calendario con asistentes.  \n\n## Ejemplos  \n### 1)  \n- Entrada: Envía un correo electrónico a Javi Manzano preguntándole a qué hora quiere salir.  \n  - Acción: Usa *AgenteContacto* para obtener el correo electrónico de Javi Manzano, si este contacto no existe, crealo.\n  - Acción: Usa *AgenteEmail* para enviar el correo. Debes pasarle a la herramienta una consulta como:  \n    > \"Envía un correo electrónico a Javi Manzano para preguntarle a qué hora quiere salir. Aquí está su correo electrónico: [dirección de correo electrónico]\"\n- Salida: El correo electrónico ha sido enviado a Javi Manzano. ¿Puedo ayudarte con algo más?  \n\n## Recordatorios Finales  \nLa fecha y hora actual es: **{{ $now }}**."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -140,
+        -40
+      ],
+      "id": "bf363d07-a25c-4011-a857-221dcde10c1c",
+      "name": "J.A.R.V.I.S"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "b740e567-9475-4132-a9a2-2708d5bfae51",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        220,
+        -140
+      ],
+      "id": "4a287886-12eb-4edf-a7c1-6414a35651b0",
+      "name": "Webhook",
+      "webhookId": "b740e567-9475-4132-a9a2-2708d5bfae51"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "J.A.R.V.I.S",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tavily": {
+      "ai_tool": [
+        [
+          {
+            "node": "J.A.R.V.I.S",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente de Email": {
+      "ai_tool": [
+        [
+          {
+            "node": "J.A.R.V.I.S",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente de Calendario": {
+      "ai_tool": [
+        [
+          {
+            "node": "J.A.R.V.I.S",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente de Contacto": {
+      "ai_tool": [
+        [
+          {
+            "node": "J.A.R.V.I.S",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculadora": {
+      "ai_tool": [
+        [
+          {
+            "node": "J.A.R.V.I.S",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "J.A.R.V.I.S",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "conocimiento base": {
+      "ai_tool": [
+        [
+          {
+            "node": "J.A.R.V.I.S",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "J.A.R.V.I.S",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "retroalimentacion": {
+      "ai_tool": [
+        [
+          {
+            "node": "J.A.R.V.I.S",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a882da47-0c71-4575-bbc1-e444f5f4634f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "S1v892l9FNsmGjMt",
+  "tags": []
+}

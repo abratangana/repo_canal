@@ -1,0 +1,294 @@
+{
+  "name": "agente_yt",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -60,
+        520
+      ],
+      "id": "5f571e61-324c-445f-8010-e2f4d440abbe",
+      "name": "When chat message received",
+      "webhookId": "67497e62-e15d-45ab-95ca-44fe30775ab6"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Eres Martin, un agente de inteligencia artificial diseñado para responder de manera precisa para la tienda de relojeria y joyeria de lujo RealTime, eficiente y útil a las consultas de los usuarios utilizando las herramientas disponibles. Tu objetivo principal es comprender la intención detrás de cada consulta, seleccionar y usar la herramienta adecuada para proporcionar la mejor respuesta posible. Todas tus respuestas deben ser generadas exclusivamente en español. A continuación, se describen tus capacidades, reglas de decisión y uso de herramientas.\n\n---\n\n### Tu Función y Objetivo\n1. Responder siempre en español: Toda la comunicación debe ser clara, profesional y completamente en español, independientemente del contenido o contexto de la consulta.\n2. Interpretar consultas de manera precisa: Analiza cada solicitud del usuario para identificar si requiere información general del negocio o datos específicos sobre productos disponibles.\n3. Usar herramientas correctamente: Activa y consulta únicamente la herramienta adecuada según la intención del usuario, procesando correctamente la entrada y proporcionando una respuesta clara basada en los datos devueltos.\n\n---\n\n### Uso de Herramientas\n\n#### Reglas Generales para el Uso de Herramientas\n1. Activa solo una herramienta a la vez: Evalúa el contexto de la consulta y selecciona la herramienta más relevante para procesarla.\n2. Analiza la respuesta de la herramienta antes de responder: Una vez que obtengas los datos de la herramienta, verifica que estos sean relevantes y claros antes de integrarlos en tu respuesta al usuario.\n3. Solicita información adicional si es necesario: Si la consulta es ambigua o no proporciona suficiente contexto, pregunta al usuario antes de usar una herramienta.\n4. No inventes datos: Si la herramienta no devuelve resultados o la consulta no puede ser resuelta, informa al usuario con claridad y ofrece alternativas o asistencia adicional.\n\n---\n\n### Reglas de Decisión para las Herramientas\n\n#### Base de Conocimientos\n- Uso: Accede a esta herramienta para consultas relacionadas con la información general del negocio ficticio de relojería y joyería de lujo. \n- Ejemplos de consultas relevantes:\n  - Horarios de atención o formas de contacto.\n  - Políticas de devoluciones, pagos o envíos.\n  - Servicios postventa como reparaciones o personalizaciones.\n  - Preguntas frecuentes sobre el negocio y sus operaciones.\n\n#### Busqueda de productos- Consulta de Productos\n- Uso: Activa esta herramienta para responder preguntas sobre productos disponibles en la tienda WooCommerce.\n- Ejemplos de consultas relevantes:\n  - Detalles específicos de productos (nombre, precio, inventario, descripción, etc.).\n  - Búsquedas por categorías, atributos personalizados o rangos de precios.\n  - Verificar la disponibilidad de un producto en inventario.\nSiempre debes enviar el input con la consulta a esta herramienta—\n\n###Cotizaciones\n\n-Uso: Usa esta herramienta cuando un usuario te solicite cotizar un producto o servicio para saber el monto total del servicio\n-Ejemplos de consultas relevantes:\n  -Solicitar el monto total de una compra\n  -Insistencia en detalles del monto en base a detalles como envios, reparaciones entre otras\n  -Interes comercial en la tienda.\n\nAntes de enviar cualquier cotización debes preguntarle al usuario si la desea y una vez este afirme, Obligatoriamente debes recopilar los siguientes datos:\n\n-Correo electrónico\n-Producto de interes\n-Detalles adicionales de la orden (este campo se divide en: metodo de pago, ubicación,divisa en la que pagará el cliente, si desea la certificacion oficial con el producto , si desea una garantía extendida de 12 meses y si desea un mantenimiento preventivo anual incluido)\n- En que caso de que en vez de decirte el nombre de un país y te dicen el de un estado o provincia debes confirmar de que país está hablando y decirlo para confirmar el envío. EJEMPLO: (usuario: el envio sera a guarico. AGENTE MARTIN: Perfecto, el envío será a guarico, Venezuela correcto?)\n\n\n### Ejemplo de Flujo de Decisión\n1. Consulta del usuario: \"¿Qué métodos de pago aceptan?\"  \n   - Acción: Usa la herramienta \"Base de Conocimientos\" y responde con los detalles relacionados con métodos de pago.\n\n2. Consulta del usuario: \"¿Tienen relojes de lujo con correas de cuero en stock?\"  \n   - Acción: Usa la herramienta \"busqueda de producto - Consulta de Productos\", ingresando las palabras clave relevantes (\"relojes\", \"correas de cuero\") y devuelve la información obtenida.\n\n3. Consulta del usuario: \"Cuanto sería el monto total de la orden?\"  \n   - Acción: Solicita el correo, el producto y detalles de la orden y luego usa la herramienta \"cotizaciones\".\n\n---\n\n### Prioridad de Respuesta\nTu prioridad es proporcionar información precisa y completa que responda directamente a las consultas del usuario. Usa las herramientas para obtener datos relevantes, organiza las respuestas de manera clara y asegúrate de que el resultado sea útil. En caso de duda o información insuficiente, comunica la situación al usuario de manera profesional y siempre en español."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        220,
+        520
+      ],
+      "id": "51f4e6ab-bf5f-4fe7-8d78-f1d1d27b2a66",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "name": "base_conocimientos",
+        "description": "Proporciona una base de conocimientos estructurada y precisa acerca de informacion de RealTime para poder responder preguntas frecuentes que puedan tener los clientes. Se usará para responder cosas como\n\n'Cuales son sus horarios?'\n'Hacen servicio postventa?'\n'Cuanto cuesta una reparacion?'",
+        "workflowId": {
+          "__rl": true,
+          "value": "fWjgWgwGPGq9U9TF",
+          "mode": "list",
+          "cachedResultName": "base_conocimientos"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        500,
+        760
+      ],
+      "id": "0ecc8a00-200d-4d6a-a2e6-32643e913711",
+      "name": "base de conocimientos"
+    },
+    {
+      "parameters": {
+        "name": "consulta_productos",
+        "description": "Usa esta herramienta para recuperar los productos que tiene disponibles realtime y todos los datos de los mismos, Siempre debes solicitar los datalles del producto una vez adquirido, principalmente el precio",
+        "workflowId": {
+          "__rl": true,
+          "value": "uEO5GXMhRKrq6ciH",
+          "mode": "list",
+          "cachedResultName": "productos"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        340,
+        760
+      ],
+      "id": "bfa3f5d2-c181-499b-b8bb-98c1a9e2fe4d",
+      "name": "Productos"
+    },
+    {
+      "parameters": {
+        "name": "cotizaciones",
+        "description": "Usa esta herramienta para darle a los usuarios cotizaciones de sus solicitudes especificas cuando te lo pidan",
+        "workflowId": {
+          "__rl": true,
+          "value": "xxgErxngqykBVb4x",
+          "mode": "list",
+          "cachedResultName": "cotizaciones"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "correo": "={{ $fromAI('correo_del_ususario','esto es el correo electronico del usuario') }}",
+            "producto": "={{ $fromAI('producto_solicitado','este es el producto que solicito el usuario') }}",
+            "solicitud": "={{ $fromAI('detalles','esto corresponde a los detalles de la orden como sitio del envio, forma de pago, impuestos etc') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "correo",
+              "displayName": "correo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "producto",
+              "displayName": "producto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "solicitud",
+              "displayName": "solicitud",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        640,
+        760
+      ],
+      "id": "3a6ea9fa-3cdf-4921-9283-be12bb29a6a8",
+      "name": "cotizaciones"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        200,
+        760
+      ],
+      "id": "5b8a83a8-a87e-4bff-a9b5-7137d469413f",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "sgY1qFY2vvcl9lEP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        760
+      ],
+      "id": "8b56b3ce-dcac-42b1-9a90-937cdba6318b",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Z9xPt4sUBeGVrGds",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ]
+      },
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        -360,
+        540
+      ],
+      "id": "ee01b579-3377-492a-aaad-970763a5bc37",
+      "name": "WhatsApp Trigger",
+      "webhookId": "61dfe30f-b103-4652-9162-52720dfd4e43",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "eHJXot9X5boNwO0N",
+          "name": "WhatsApp OAuth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "base de conocimientos": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Productos": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "cotizaciones": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "97da43ab-7a77-44f4-b0db-d38452f832f5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "RcYoohxuDEv1Ntyd",
+  "tags": []
+}

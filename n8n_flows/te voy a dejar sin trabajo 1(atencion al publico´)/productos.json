@@ -1,0 +1,564 @@
+{
+  "name": "productos",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -500,
+        -100
+      ],
+      "id": "4f6f2502-bb92-4e9f-ab19-5742f0554833",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.wooCommerce",
+      "typeVersion": 1,
+      "position": [
+        -300,
+        -80
+      ],
+      "id": "28b78dc9-34c9-4bbb-8041-2e0ae179ce1f",
+      "name": "WooCommerce",
+      "credentials": {
+        "wooCommerceApi": {
+          "id": "x3UjlvAvPYcxcCev",
+          "name": "WooCommerce account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        40,
+        -100
+      ],
+      "id": "af33fad1-a2d9-47cf-8da6-58de09bcd501",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        220,
+        -100
+      ],
+      "id": "a360364a-b7d7-420f-a741-0a63207a22e1",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        420,
+        -100
+      ],
+      "id": "327d6c49-3a7c-489a-9449-5dd1c4d0c5fa",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aeee6a12-8110-4fbe-a041-22c83e301c5d",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "429caf92-c48d-43f1-a39a-4db9c5b64b1c",
+              "name": "nombre",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "ea1e52c0-f6c8-4fa3-8980-86e58aec76d3",
+              "name": "descripción",
+              "value": "={{ $json.description }}",
+              "type": "string"
+            },
+            {
+              "id": "5bf833ac-2c9f-4bc4-8739-dee720ce7c9a",
+              "name": "precio",
+              "value": "=El precio es de {{ $json.price }} dolares americanos",
+              "type": "string"
+            },
+            {
+              "id": "c638a6a6-4ecb-470d-b5ea-fe61466bd9d9",
+              "name": "imagen",
+              "value": "={{ $json.images[0].src }}",
+              "type": "string"
+            },
+            {
+              "id": "5d5bfa8d-a2ad-46fc-8c02-cb29eb5c7d4d",
+              "name": "url del producto",
+              "value": "={{ $json.permalink }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -120,
+        -100
+      ],
+      "id": "971f895e-9367-4b6d-b313-526f44db3a16",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "products",
+          "mode": "list",
+          "cachedResultName": "products"
+        },
+        "options": {
+          "queryName": "match_products"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        120,
+        320
+      ],
+      "id": "2119650f-1448-4769-8983-566f565aa57e",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "Ky2WIiGGPX4tITZT",
+          "name": "Supabase_yutu"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        500,
+        620
+      ],
+      "id": "c74f4755-6be0-4aa3-bb70-e1fcd5a46672",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        980,
+        340
+      ],
+      "id": "6921cb9d-ee37-465c-93f3-dca37f4df6a5",
+      "name": "Workflow Input Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analiza esta consulta y trae los datos posibles de : {{ $json.query }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainRetrievalQa",
+      "typeVersion": 1.4,
+      "position": [
+        1260,
+        340
+      ],
+      "id": "6e5e8382-b960-486c-8b81-f4939cedbc02",
+      "name": "Question and Answer Chain"
+    },
+    {
+      "parameters": {
+        "topK": 5
+      },
+      "type": "@n8n/n8n-nodes-langchain.retrieverVectorStore",
+      "typeVersion": 1,
+      "position": [
+        1480,
+        620
+      ],
+      "id": "cd27fbd3-8151-4152-872a-d9053a2b7ba3",
+      "name": "Vector Store Retriever"
+    },
+    {
+      "parameters": {
+        "tableName": {
+          "__rl": true,
+          "value": "products",
+          "mode": "list",
+          "cachedResultName": "products"
+        },
+        "options": {
+          "queryName": "match_products"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        880
+      ],
+      "id": "1ef31213-6152-4f4e-868a-c135c1362aba",
+      "name": "Supabase Vector Store1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "Ky2WIiGGPX4tITZT",
+          "name": "Supabase_yutu"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "133f6942-90d9-4fb7-924c-a8fe768a0f15",
+              "name": "respuesta",
+              "value": "={{ $json.response.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1620,
+        340
+      ],
+      "id": "a82e3f53-4aec-4b7c-985c-7e3cf2954999",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        1080,
+        560
+      ],
+      "id": "7b5165b1-6029-4b6b-b9bd-110043c938e3",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Z9xPt4sUBeGVrGds",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-large",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        100,
+        600
+      ],
+      "id": "d0c176f5-34a2-441f-8282-d5d0b4443565",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "Z9xPt4sUBeGVrGds",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "text-embedding-3-large",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1460,
+        1080
+      ],
+      "id": "2e35978f-2a01-449e-9579-cb198a6d2895",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "Z9xPt4sUBeGVrGds",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "concatenate",
+              "field": "data",
+              "separateBy": ", "
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -100
+      ],
+      "id": "3c875ac6-aaf8-46a4-bc77-86ad129fe1f3",
+      "name": "Summarize"
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 200,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        600,
+        840
+      ],
+      "id": "c7bbd390-59d1-465e-92dd-7883014aa43c",
+      "name": "Recursive Character Text Splitter"
+    }
+  ],
+  "pinData": {
+    "Workflow Input Trigger": [
+      {
+        "json": {
+          "query": "Aceptan pagos en cripto?"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "WooCommerce",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WooCommerce": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Input Trigger": {
+      "main": [
+        [
+          {
+            "node": "Question and Answer Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Store Retriever": {
+      "ai_retriever": [
+        [
+          {
+            "node": "Question and Answer Chain",
+            "type": "ai_retriever",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store1": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Vector Store Retriever",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Question and Answer Chain": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Question and Answer Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "main": [
+        []
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1c4a2237-21cd-4e56-9049-8cd11a198860",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "uEO5GXMhRKrq6ciH",
+  "tags": []
+}

@@ -1,0 +1,502 @@
+{
+  "name": "Contactos_jarvis",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -720,
+        340
+      ],
+      "id": "b30ee7a2-366f-40c5-94c2-138f2f1d3830",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "37gQNl7CXDgV1eh7",
+          "name": "openai_bryan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -740,
+        80
+      ],
+      "id": "f54504b8-b88e-4e7c-b9f4-a0a6a595824b",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4f360190-a717-4a93-8336-d03ea65975d5",
+              "name": "response",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8f211305-a64f-4b10-9c4a-c087f7fb308a",
+      "name": "✅"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4f360190-a717-4a93-8336-d03ea65975d5",
+              "name": "response",
+              "value": "Ha ocurrido un error. Por favor, inténtalo de nuevo.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        180
+      ],
+      "id": "ac64977e-9bce-4724-9389-d8c78a476ab0",
+      "name": "❌"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "=# Resumen  \nEres un asistente de gestión de contactos. Tus responsabilidades incluyen buscar contactos, agregar nuevos contactos o actualizar la información de un contacto.  \n\n## Gestión de Contactos  \n- Usa \"ObtenerContactos\" para obtener información de contacto. \n- Usa \"AddContactos\" para almacenar nueva información de contacto.\n- Usa \"ActualizarEstado\" para modificar y actualizar el estado de un contacto existente.\n- Usa \"EliminarContacto\" para eliminar la información de un contacto existente, debes obtener primero su \"row_number\" con \"ObtenerContactos\"."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -520,
+        80
+      ],
+      "id": "b2b5e9c5-534a-4eb6-8966-85a7c0a5d581",
+      "name": "Agente de Contactos",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Uq6pikkpIXOxju5iPXb0aDethppH2ZDp8GbIH7Fhq0Y",
+          "mode": "list",
+          "cachedResultName": "contactos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Uq6pikkpIXOxju5iPXb0aDethppH2ZDp8GbIH7Fhq0Y/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Uq6pikkpIXOxju5iPXb0aDethppH2ZDp8GbIH7Fhq0Y/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "nombre",
+              "lookupValue": "={{ $fromAI(\"nombre\") }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.5,
+      "position": [
+        -560,
+        360
+      ],
+      "id": "86453acb-3959-4fd9-a475-88c5f6c49b2d",
+      "name": "ObtenerContactos",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vcPD5HDhqn85YMoV",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1k3eXgJ8b3QGeWOIUxoksf_PXzLtb1--PtYNufvC65a0",
+          "mode": "list",
+          "cachedResultName": "contactos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1k3eXgJ8b3QGeWOIUxoksf_PXzLtb1--PtYNufvC65a0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1k3eXgJ8b3QGeWOIUxoksf_PXzLtb1--PtYNufvC65a0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nombre": "={{ $fromAI('nombre') }}",
+            "numero": "={{ $fromAI('numero') }}",
+            "especialidad": "={{ $fromAI('especialidad') }}",
+            "rol": "={{ $fromAI('rol') }}",
+            "correo": "={{ $fromAI('correo') }}"
+          },
+          "matchingColumns": [
+            "nombre"
+          ],
+          "schema": [
+            {
+              "id": "numero",
+              "displayName": "numero",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "especialidad",
+              "displayName": "especialidad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rol",
+              "displayName": "rol",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "correo",
+              "displayName": "correo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.5,
+      "position": [
+        -240,
+        380
+      ],
+      "id": "d1bf86e6-8a98-461d-9cfb-fe408c6997b9",
+      "name": "ActualizarEstado",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vcPD5HDhqn85YMoV",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "documentId": {
+          "__rl": true,
+          "value": "1k3eXgJ8b3QGeWOIUxoksf_PXzLtb1--PtYNufvC65a0",
+          "mode": "list",
+          "cachedResultName": "contactos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1k3eXgJ8b3QGeWOIUxoksf_PXzLtb1--PtYNufvC65a0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1k3eXgJ8b3QGeWOIUxoksf_PXzLtb1--PtYNufvC65a0/edit#gid=0"
+        },
+        "startIndex": "={{$fromAI (\"row_number\")}}",
+        "numberToDelete": "={{ 1 }}"
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.5,
+      "position": [
+        -100,
+        320
+      ],
+      "id": "656682ad-88b4-45c9-86ba-7dba979909eb",
+      "name": "EliminarContacto",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vcPD5HDhqn85YMoV",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1k3eXgJ8b3QGeWOIUxoksf_PXzLtb1--PtYNufvC65a0",
+          "mode": "list",
+          "cachedResultName": "contactos",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1k3eXgJ8b3QGeWOIUxoksf_PXzLtb1--PtYNufvC65a0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1k3eXgJ8b3QGeWOIUxoksf_PXzLtb1--PtYNufvC65a0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "numero": "={{ $fromAI('numero','numero del contacto') }}",
+            "nombre": "={{ $fromAI('nombre','aqui el nombre del contacto') }}",
+            "especialidad": "={{ $fromAI('especialidad','aqui la especialidad del contacto, en caso de no tener registrar como nulo') }}",
+            "rol": "={{ $fromAI('rol','aqui el rol que cumple en mi vida el contacto, en caso de no tener uno definido registrar como nulo') }}",
+            "correo": "={{ $fromAI('correo','aqui el correo electronico del contacto') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "numero",
+              "displayName": "numero",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "especialidad",
+              "displayName": "especialidad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rol",
+              "displayName": "rol",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "correo",
+              "displayName": "correo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "useAppend": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.5,
+      "position": [
+        -400,
+        380
+      ],
+      "id": "e173bd47-a10b-469a-bc0b-c7c1079eaeca",
+      "name": "AddContactos",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "vcPD5HDhqn85YMoV",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "query": "aqui la consulta del usuario respecto a un contacto"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente de Contactos",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Agente de Contactos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente de Contactos": {
+      "main": [
+        [
+          {
+            "node": "✅",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "❌",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ObtenerContactos": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de Contactos",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ActualizarEstado": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de Contactos",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EliminarContacto": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de Contactos",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AddContactos": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de Contactos",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "36406e0e-1748-4738-b4f7-46987417d80b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "bx5cp9KUE6BmwD9X",
+  "tags": []
+}

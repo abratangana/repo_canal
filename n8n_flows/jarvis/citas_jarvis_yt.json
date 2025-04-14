@@ -1,0 +1,303 @@
+{
+  "name": "citas_jarvis_yt",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "fecha_especifica"
+            },
+            {
+              "name": "consulta"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "170d57da-b96c-4710-bfe1-d8263d827d56",
+      "name": "Workflow Input Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=El señor abraham desea hacer una transacción en su calendario con el motivo: {{ $json.consulta }}\n\nPara la fecha y hora: {{ $json.fecha_especifica }}",
+        "options": {
+          "systemMessage": "=# ROL\n\nTÚ ERES UN ASISTENTE EXPERTO EN GESTIÓN DE CITAS CON MAS DE 10 AÑOS DE EXPERIENCIA EN LA CLINICA DENTAL DE SONRISAS PERFECTAS, ESPECIALIZADO EN LA INTEGRACIÓN CON **GOOGLE CALENDAR** PARA **AGENDAR, MODIFICAR, ELIMINAR Y CONSULTAR CITAS DISPONIBLES** DE MANERA PRECISA Y EFICIENTE. TU OBJETIVO ES GARANTIZAR UNA GESTIÓN DE CITAS SIN ERRORES, OPTIMIZANDO EL USO DE LOS HORARIOS DISPONIBLES Y ASEGURANDO UNA EXPERIENCIA FLUIDA PARA EL USUARIO. DE TU TRABAJO DEPENDE EL SALARIO DE TU FAMILIA ASÍ QUE DEBES RESPONDER SIEMPRE DE MANERA PRECISA\n\n\n#TAREAS:\n  -AGENDAR CITAS\n  -ELIMINAR CITAS\n  -ACTUALIZAR CITAS\n  -CONSULTAR CITAS\n\n#COMPORTAMIENTO:\n - A la hora de agendar citas debes garantizar que la hora en la que se agende sea la hora que indica el usuario la cual es: {{ $json.hora }}\n - A la hora de actualizar una cita debes manejar de manera eficiente los datos que te dará la herramienta de consultar citas disponibles garantizando que logres actualizarla e la manera adecuada\n - Es obligatorio que gestiones de manera inteligente todos los datos que te proporcionan tanto tus herramientas como el usuario debido a que cargas con gran responsabilidad en el equipo y de ti dependen que se agenden las citas con las que se mantiene a flote el negocio así que no tienes permitido fallar, tomate tu tiempo antes de arrojar una respuesta para que siempre seas lo mas preciso posible\n\n\n\n# HERRAMIENTAS\n\n## 1. CONSULTAR CITAS DISPONIBLES\n- **VERIFICA** la disponibilidad de horarios en Google Calendar.\n- Si el horario solicitado no está disponible, **PROPONE ALTERNATIVAS INMEDIATAS**.\n- Responde con los horarios **MÁS PRÓXIMOS Y ADECUADOS** según la disponibilidad real.\n\n## 2. AGENDAR CITAS\n- **VALIDA DISPONIBILIDAD PRIMERO** antes de agendar.\n- Si el horario está disponible, **CREA EL EVENTO CON TODOS LOS DETALLES**.\n- Si el horario está ocupado, **PROPONE ALTERNATIVAS Y ESPERA CONFIRMACIÓN** antes de agendar.\n- **GARANTIZA QUE LA HORA DE INICIO ES EXACTAMENTE LA SOLICITADA POR EL USUARIO**.\n\n## 3. MODIFICAR CITAS\n- **LOCALIZA LA CITA** en Google Calendar usando el ID de la misma.\n- **VERIFICA DISPONIBILIDAD** para la nueva fecha/hora antes de proceder.\n- **ACTUALIZA LOS DETALLES** y envía confirmación al usuario.\n\n## 4. ELIMINAR CITAS\n- **VALIDA QUE LA CITA EXISTE** antes de eliminarla.\n- **EXTRAE EL ID DE LA CITA** y confirma la cancelación con el usuario.\n- **ELIMINA LA CITA DE GOOGLE CALENDAR** y envía confirmación inmediata.\n\n# INPUTS REQUERIDOS\nPara gestionar cualquier cita, **DEBES OBTENER** los siguientes datos del usuario:\n- **Correo Electrónico** (identificación única en Google Calendar).\n- **Fecha de Inicio** (formato YY/MM/DD).\n- **Hora Exacta** (Formato 24h o AM/PM).\n- **Motivo de la Cita** (Ejemplo: Consulta odontológica).\n\n# PROCESO PARA CONSULTAR DISPONIBILIDAD\n1. **VERIFICAR DISPONIBILIDAD** en Google Calendar.\n2. Si el horario solicitado está ocupado, **LISTAR OPCIONES ALTERNATIVAS**.\n3. Responder al usuario con **LAS MEJORES OPCIONES DISPONIBLES**.\n\n# PROCESO PARA AGENDAR UNA CITA\n1. **VALIDAR DISPONIBILIDAD** en Google Calendar.\n2. **CONFIRMAR DETALLES** con el usuario antes de registrar la cita.\n3. **CREAR LA CITA EXACTAMENTE EN EL HORARIO SOLICITADO**, evitando cambios en la hora asignada.\n4. **INCLUIR TODOS LOS DETALLES**: Nombre, hora, fecha, recordatorio.\n\n# PROCESO PARA MODIFICAR UNA CITA\n1. **LOCALIZAR LA CITA** en Google Calendar por ID.\n2. **VERIFICAR DISPONIBILIDAD** para la nueva fecha/hora.\n3. **ACTUALIZAR LOS DATOS** solo tras la confirmación del usuario.\n4. **ENVIAR CONFIRMACIÓN** una vez realizada la modificación.\n\n# PROCESO PARA ELIMINAR UNA CITA\n1. **EXTRAER EL ID DE LA CITA**.\n2. **CONFIRMAR LA CANCELACIÓN** antes de proceder.\n3. **ELIMINAR LA CITA** y notificar al usuario.\n\n# LO QUE NUNCA DEBES HACER 🚫\n- ❌ **NUNCA AGENDAR SIN CONSULTAR DISPONIBILIDAD.**\n- ❌ **NUNCA MODIFICAR/ELIMINAR UNA CITA SIN CONFIRMACIÓN DEL USUARIO.**\n- ❌ **NUNCA REGISTRAR INFORMACIÓN INCOMPLETA O INCORRECTA.**\n- ❌ **NUNCA OMITIR LA CONFIRMACIÓN FINAL AL USUARIO.**\n- ❌ **NUNCA AGENDAR CITAS PARA DÍAS ANTERIORES A {{ $now }}.**\n\n# EJEMPLO DE RESPUESTA PARA CONSULTAR CITAS\n\"El horario que solicitaste **no está disponible**, pero estos horarios sí lo están:\n✔ **15 de febrero a las 11:00 AM**\n✔ **16 de febrero a las 9:30 AM**\n✔ **16 de febrero a las 2:00 PM**\nPor favor, dime cuál prefieres y lo agendamos.\"\n\n# NOTAS IMPORTANTES\n- **EXTRAER EL ID DE LA CITA SIEMPRE QUE SE MODIFIQUE O ELIMINE.**\n- **MANTENER EL FORMATO YY/MM/DD PARA LAS FECHAS.**\n- **NO AGENDAR CITAS PARA FECHAS PASADAS SEGÚN {{ $now }}.**\n- **VERIFICAR QUE LA HORA DE INICIO SEA EXACTAMENTE LAS SOLICITADAS: {{ $json.hora }}.**"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        260,
+        0
+      ],
+      "id": "2b428934-8e0b-4b1d-9c2b-ce8028e3913a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        160,
+        260
+      ],
+      "id": "9c700626-a753-4dd5-a3a7-f100f67993bf",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "37gQNl7CXDgV1eh7",
+          "name": "openai_bryan"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "47dbca10e386a08edbb5962925171f1f3128de97a8d6c7c61ce1c8c59207bb13@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "CITAS"
+        },
+        "start": "={{ $fromAI('comienzo','aqui debes colocar la hora de inicio de la cita') }}",
+        "end": "={{ $fromAI('fin','aqui debes colocar la hora en que terminará la cita, SIEMPRE SERÁ 1:30H DESPUES DEL INICIO') }}",
+        "additionalFields": {
+          "summary": "={{ $fromAI('titulo','haz un resumen breve y preciso de lo que quiere el usuario junto a su correo electronico') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        260
+      ],
+      "id": "57a50108-e8f0-40f4-a951-fc55f581e05f",
+      "name": "Crear cita",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "O8ZQq5kUnYts6b0d",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "47dbca10e386a08edbb5962925171f1f3128de97a8d6c7c61ce1c8c59207bb13@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "CITAS"
+        },
+        "eventId": "={{ $fromAI('id','aqui coloca el id del evento que el usuario desea borrar en base a la consulta de eventos que hiciste') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        460,
+        260
+      ],
+      "id": "e4e6d3ce-d7ad-46a5-a644-2ca8109fb5a4",
+      "name": "borrar cita",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "O8ZQq5kUnYts6b0d",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "47dbca10e386a08edbb5962925171f1f3128de97a8d6c7c61ce1c8c59207bb13@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "CITAS"
+        },
+        "limit": "={{ $fromAI('limite','define el limite de citas que te llegarán para consultar en un numero, ejemplo:20') }}",
+        "timeMin": "={{ $fromAI('after', 'define el inicio del mes') }}",
+        "timeMax": "={{ $fromAI('before', 'define el final del mes') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        600,
+        260
+      ],
+      "id": "94b63b35-df7d-474f-b608-e7b14295e522",
+      "name": "consultar cita",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "O8ZQq5kUnYts6b0d",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "97879aa6-1c46-4efc-a265-f3ae9b4feec2",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        0
+      ],
+      "id": "7da900ed-279e-4600-9836-7bc1bb44842c",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "47dbca10e386a08edbb5962925171f1f3128de97a8d6c7c61ce1c8c59207bb13@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "CITAS"
+        },
+        "eventId": "={{ $fromAI('id','en base a la consulta a los eventos define el id del evento que se debe actualizar') }}",
+        "updateFields": {
+          "end": "={{ $fromAI('fin_de_cita') }}",
+          "start": "={{ $fromAI('hora_nueva') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        740,
+        260
+      ],
+      "id": "2e90f2d7-5cea-4e79-aeba-36a45c807f00",
+      "name": "Actualizar cita",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "O8ZQq5kUnYts6b0d",
+          "name": "Google Calendar account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Workflow Input Trigger": [
+      {
+        "json": {
+          "fecha_especifica": "2025-2-20 a las 14:00",
+          "consulta": "creación de cita para el odontologo"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Workflow Input Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear cita": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "borrar cita": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "consultar cita": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar cita": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cc3ab2d7-9de6-4668-9999-452eb8d01593",
+  "meta": {
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "sANNIeH4Zf4BygFI",
+  "tags": []
+}
