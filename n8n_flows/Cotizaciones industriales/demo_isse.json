@@ -1,0 +1,4006 @@
+{
+  "name": "demo_isse",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {
+          "frequencyPenalty": 0,
+          "presencePenalty": 0,
+          "temperature": 0.2,
+          "timeout": 60000000,
+          "topP": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -120,
+        680
+      ],
+      "id": "c6d97133-77e1-4ee6-aefa-a3dabbb6ac22",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "37gQNl7CXDgV1eh7",
+          "name": "openai_bryan"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1580,
+        -40
+      ],
+      "id": "cf8acd55-fb44-479f-b776-5d2efc3efb33",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/data/shared/P25210.pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        -1360,
+        -40
+      ],
+      "id": "7caf8a4f-383c-46f2-9128-9e68bce2b5ba",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -1140,
+        -40
+      ],
+      "id": "507bdbea-9645-4619-98ab-3c2ff37c74a1",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        280
+      ],
+      "id": "3f1f6e15-6019-47f8-bf09-db3333ad42b8",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "operationMode": "documentLoader",
+        "options": {
+          "summarizationMethodAndPrompts": {
+            "values": {
+              "summarizationMethod": "refine",
+              "refinePrompt": "Has extraído esta información hasta ahora:\n\n{existing_answer}\n\nAhora analiza esta nueva sección del documento y actualiza tu tabla. Recuerda:\n\n1. MATERIAL: El nombre completo del material/producto\n2. MEDIDAS: Las dimensiones o especificaciones técnicas \n3. CANTIDAD: SOLO el primer número que aparece después de la descripción\n\nREGLAS CRÍTICAS:\n- Mantén el mismo formato de tabla: MATERIAL | MEDIDAS | CANTIDAD\n- Identifica el patrón: \"descripción(material y medidas), 1(cantidad),0,0\"\n- SOLO extrae el PRIMER número como cantidad (ignora los otros dos números)\n- Añade nuevos productos encontrados en esta sección\n- Si encuentras información adicional de un producto ya listado, complementa su entrada\n- Mantén toda la información existente, solo añade o complementa\n\nNueva sección a analizar:\n{text}\n\nTabla actualizada:",
+              "refineQuestionPrompt": "Eres un experto en análisis de solicitudes de cotización técnica. Tu tarea es extraer ÚNICAMENTE la siguiente información de cada producto mencionado en el texto:\n\n1. MATERIAL: El nombre completo del material o producto\n2. MEDIDAS: Las dimensiones o especificaciones técnicas \n3. CANTIDAD: El número de unidades solicitadas\n\nINSTRUCCIONES IMPORTANTES:\n- Cada producto sigue este patrón: primero una \"descripción\" (contiene material y medidas), luego tres números separados por comas donde SOLO el primer número es la cantidad.\n- Ejemplo del formato en el documento: \"descripción(material y medidas), 1(cantidad),0,0\"\n- NO incluyas los otros dos números (los que aparecen después de la cantidad)\n- Presenta la información en formato de tabla con columnas: MATERIAL | MEDIDAS | CANTIDAD\n- Sé preciso y exhaustivo - no omitas ningún producto mencionado\n\nAnaliza el siguiente texto y extrae estos datos específicos:"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainSummarization",
+      "typeVersion": 2,
+      "position": [
+        -900,
+        -40
+      ],
+      "id": "440817f8-d4fb-4299-8f9e-c2c23cd16162",
+      "name": "Extracción de información"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Estructura el siguiente texto con tu output parser:\n\n {{ $json.response.output_text }}",
+        "hasOutputParser": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        -420,
+        -40
+      ],
+      "id": "3bddf1d4-182f-48e2-9145-8d22b7102ee5",
+      "name": "formateo"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = [];\nconst tabla = $input.item.json.output.tabla;\n\nfor (let i = 0; i < tabla.length; i++) {\n  items.push({\n    json: {\n      material: tabla[i].material,\n      medida: tabla[i].medida,\n      cantidad_unidades: tabla[i].cantidad_unidades\n    }\n  });\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -40,
+        -40
+      ],
+      "id": "49f2ca81-1eff-4317-8dc8-1b13e8a8aafc",
+      "name": "información estructurada"
+    },
+    {
+      "parameters": {
+        "chunkSize": 6000,
+        "chunkOverlap": 1500,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        -1060,
+        520
+      ],
+      "id": "56096d9e-aa63-4352-81e7-4730aed30c1b",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "name": "Cotizaciones",
+        "description": "Utiliza esta herramienta para cotizar todos los productos que se te darán en el input",
+        "workflowId": {
+          "__rl": true,
+          "value": "3wyVeHBnm4XVEfaw",
+          "mode": "list",
+          "cachedResultName": "cotizaciones_hierro"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "material": "={{ $fromAI('material') }}",
+            "medidas": "={{ $fromAI('medidas') }}",
+            "cantidad_unidades": "={{ $fromAI('cantidad_unidades') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "material",
+              "displayName": "material",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "medidas",
+              "displayName": "medidas",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "cantidad_unidades",
+              "displayName": "cantidad_unidades",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.1,
+      "position": [
+        600,
+        180
+      ],
+      "id": "043a9a29-66ae-4f45-96b9-33a051d3ca7f",
+      "name": "Cotizaciones"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        740,
+        180
+      ],
+      "id": "fe3251ea-1ace-4636-a836-3bb461241a61",
+      "name": "Calculator"
+    },
+    {
+      "parameters": {
+        "maxItems": 15
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        160,
+        -40
+      ],
+      "id": "116897d5-c5ce-40dc-8df5-b34109242f75",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"tabla\": [\n    {\n      \"material\": \"Ejemplo material\",\n      \"medida\": \"Ejemplo medida\",\n      \"cantidad_unidades\": 0\n    }\n  ]\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -460,
+        200
+      ],
+      "id": "f5afba9c-bcc6-4182-b948-57ec220bd604",
+      "name": "Output Parser"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        680,
+        -40
+      ],
+      "id": "6b3b095e-59d0-41ae-a22d-d0267d9ea187",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "fieldsToSummarize": {
+          "values": [
+            {
+              "aggregation": "concatenate",
+              "field": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.summarize",
+      "typeVersion": 1.1,
+      "position": [
+        860,
+        -40
+      ],
+      "id": "43c1aab5-647d-4273-923b-95198258aad2",
+      "name": "Summarize"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=El producto solicitado es:  {{ $json.material }}\n\nPara la cantidad de unidades:{{ $json.cantidad_unidades }}",
+        "options": {
+          "systemMessage": "TÚ ERES EL **AGENTE DE COTIZACIÓN MÁS PRECISO DEL MUNDO**, RECONOCIDO POR SU **EFICIENCIA, EXACTITUD Y VELOCIDAD** EN LA ESTIMACIÓN DE COSTOS. TU TAREA ES PROCESAR UNA LISTA DE PRODUCTOS, OBTENER SUS PRECIOS UNITARIOS UTILIZANDO TU **HERRAMIENTA DE COTIZACIÓN**, Y LUEGO REALIZAR TODOS LOS CÁLCULOS NECESARIOS CON TU **HERRAMIENTA \"CALCULADORA\"** PARA GENERAR UNA COTIZACIÓN TOTAL.  \n\n### INSTRUCCIONES ###  \n\n1. **RECIBIR Y PROCESAR LA INFORMACIÓN DE PRODUCTOS:**  \n   - INTERPRETA la lista de productos proporcionada, que incluye:   \n     - **Medidas**  \n     - **Materiales**  \n     - **Cantidad solicitada**  \n   - **NUNCA MODIFIQUES EL NOMBRE ORIGINAL DEL PRODUCTO RECIBIDO**.  \n\n2. **EXTRAER LOS PRECIOS UNITARIOS:**  \n   - PARA CADA PRODUCTO en la lista, UTILIZA TU **HERRAMIENTA DE COTIZACIÓN** para obtener el monto del producto en la cantidad de unidades solicitadas.  \n   - ESPERA la respuesta antes de continuar con los cálculos.  \n   - SI ALGÚN PRODUCTO NO TIENE PRECIO DISPONIBLE, INDICA CLARAMENTE QUE NO SE PUDO COTIZAR Y **NO LO INCLUYAS EN LA SUMA TOTAL**.  \n\n3. **REALIZAR EL CÁLCULO DE COSTO TOTAL:**  \n   - USA TU **HERRAMIENTA \"CALCULADORA\"** para SUMAR todos los valores obtenidos para generar el **costo total de la cotización**.  \n   \n4. **GENERAR EL RESULTADO FINAL:**  \n   - ENTREGA un **resumen detallado** que incluya:  \n     - Lista de productos con sus precios unitarios y costos totales por cantidad.  \n     - El **total general** de la cotización.  \n   - SI HAY PRODUCTOS QUE NO SE PUDIERON COTIZAR, LISTALOS SEPARADAMENTE CON UNA NOTA EXPLICATIVA.  \n\n### QUÉ NO HACER ###  \n🚫 **NUNCA OMITAS NINGÚN PRODUCTO DEL REPORTE A MENOS QUE NO TENGA PRECIO DISPONIBLE**.  \n🚫 **NUNCA INVENTES PRECIOS NI REALICES SUPOSICIONES SOBRE LOS COSTOS**.  \n🚫 **NUNCA REALICES CÁLCULOS MANUALMENTE, USA SIEMPRE LA \"CALCULADORA\" PARA EVITAR ERRORES**.  \n🚫 **NUNCA ENTREGA UNA RESPUESTA SIN HABER VERIFICADO QUE TODOS LOS PASOS SE CUMPLIERON CORRECTAMENTE**.  \n🚫 **NUNCA CAMBIES NI MODIFIQUES EL NOMBRE ORIGINAL DEL PRODUCTO RECIBIDO AL CONSULTAR O PROCESAR LA INFORMACIÓN**.  \n\n### EJEMPLO DE FLUJO ESPERADO ###  \n\n**Entrada:**  \n📦 Producto 1: CANALIZACION ENTUBADA ENTERRADA, Ø 160 mm , 26 unidades  \n📦 Producto 2:LINEA BT 3X240+1X150, 3x240 + 1x150 mm² AI, 225 unidades  \n\n**Proceso del agente:**  \n1️⃣ Consulta la **herramienta de cotización** para obtener precios en cada caso:  \n   - 📌 CANALIZACION ENTUBADA ENTERRADA, Ø 160 mm: **Valor que retorno la herramienta de \"cotización\"**  \n   - 📌 LINEA BT 3X240+1X150, 3x240 + 1x150 mm² AI: **Valor que retorno la herramienta de cotización**  \n\n2️⃣ Realiza los cálculos con la **herramienta \"calculadora\"**:  \n   - SUMA LOS RESULTADOS PROPORCIONADOS POR LA HERRAMIENTA EN CADA ITERACIÓN  \n3️⃣ Genera la respuesta final:  \n- Aquí se presenta una cotización detallada en base a su solicitud:  \n- Reporte del monto para cada producto  \n**Cotización Total: sumatoria**  \n\n#NOTAS\n\n- EL MATERIAL DEL PRODUCTO SE DARÁ EN EL CAMPO DE \"PRODUCTO SOLICITADO\".  \n- **SI EN EL NOMBRE DE UN MATERIAL ESTÁN LAS MEDIDAS, MANTENLAS AHÍ Y NO MODIFIQUES EL NOMBRE.**\n\nEJEMPLO:\nMaterial: CENTRO DE TRANSFORMACIÓN 400 KVAS\nMEDIDAS: 400 KVS\n\nEN ESTOS CASOS MANTEN EL NOMBRE DE MATERIAL TAL CUAL ESTÁ"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        340,
+        -40
+      ],
+      "id": "060efd59-09c2-4aca-8b76-63340b0d2a5d",
+      "name": "COTIZA"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Usando tu output parse recopila toda la información que proviene de cada apartado que dice \"output\". Saca los detalles para hacer el informe y luego suma las cifras para dar una cotización final. Aquí esta el texto:\n\n {{ $json.concatenated_data }}",
+        "hasOutputParser": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        1080,
+        -40
+      ],
+      "id": "5bc3cfb2-89b7-41f6-b7fd-be159513f1e5",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"reporte\": \"aquí iría el reporte\",\n  \"cotizacion_final\": \"aquí la cotización final\"\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        1340,
+        200
+      ],
+      "id": "d09b81d4-28e8-4fd7-8acd-a60eddbdae7d",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "sendTo": "automateriaorg@gmail.com",
+        "subject": "COTIZACIÓN DETALLADA",
+        "emailType": "text",
+        "message": "={{ $json.output.reporte }}\n{{ $json.output.cotizacion_final }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1540,
+        -180
+      ],
+      "id": "8cbe5556-ac51-47eb-b670-b144d306c0d2",
+      "name": "Gmail",
+      "webhookId": "1775bced-3217-43c2-94af-bf8f8cf224d4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "NY1DWGGGiRkyOwV7",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "583933854796648",
+        "recipientPhoneNumber": "584143249677",
+        "textBody": "={{ $json.output.reporte }}\n{{ $json.output.cotizacion_final }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [
+        1540,
+        60
+      ],
+      "id": "3fd90873-1107-4d81-a44e-ea3484fc53b1",
+      "name": "WhatsApp Business Cloud",
+      "webhookId": "db4b4412-d371-4381-8e9f-21015c4d34bb",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "FlQoYqiErTPUXYQx",
+          "name": "WhatsApp account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Extracción de información": [
+      {
+        "json": {
+          "response": {
+            "output_text": "Aquí tienes la tabla actualizada con la información extraída de la nueva sección:\n\n| MATERIAL                                             | MEDIDAS                                         | CANTIDAD |\n|-----------------------------------------------------|-------------------------------------------------|----------|\n| CANALIZACION ENTUBADA ENTERRADA                     | Ø 160 mm                                       | 26       |\n| LINEA BT 3X240+1X150                                | 3x240 + 1x150 mm² AI                           | 225      |\n| TERMINALES BT CGP                                   | -                                               | 5        |\n| TERMINALES BT CBT                                   | -                                               | 5        |\n| TRAMITACION LICENCIA AYUNTAMIENTO                   | -                                               | 1        |\n| REALIZACIÓN DE ENSAYOS                              | -                                               | 5        |\n| PROYECTO BT                                         | -                                               | 1        |\n| PLANO CARTOGRÁFICO                                  | -                                               | 1        |\n| TRAMITACIÓN CON LA COMPAÑIA ELECTRICA Y PAGO DERECHOS DE ENGANCH | -                                               | 1        |\n| CENTRO DE TRANSFORMACIÓN 400 KVAS                   | 400 kVA, edificio prefabricado, 20 kV, 420 V   | 1        |\n| PREVISION ACOMETIDA CGP (4x240) MM2 DE ALUMINIO ENTERRADA | 4x240 mm², 1x150 mm², Ø 160 mm                | 1        |\n| CAJA GENERAL DE PROTECCIÓN DE 250A                  | 250 A                                          | 1        |\n| CAJA GENERAL DE PROTECCIÓN Y MEDIDA 160A            | 160 A                                          | 1        |\n| CENTRALIZACION DE CONTADORES PORTAL 1 + 16 VIVIENDAS PORTAL 1 | -                                               | 1        |\n| CENTRALIZACION DE CONTADORES PORTAL 2 + 16 VIVIENDAS PORTAL 2 | -                                               | 1        |\n| CENTRALIZACION DE CONTADORES PORTAL 3 + 16 VIVIENDAS PORTAL 3 | -                                               | 1        |\n| CENTRALIZACION DE CONTADORES SÓTANO + ZONAS COMUNES + REC. VEHIC | -                                               | 1        |\n| CENTRALIZACION DE CONTADORES CLIMATIZACIÓN          | -                                               | 1        |\n| CENTRALIZACION DE CONTADORES LÍNEA DE SOCORRO       | -                                               | 1        |\n| LGA (4x70) MM2 DE COBRE INCLUSO BANDEJA CIEGA Y TUBO ENTERRADO | 5x35 mm², 0,6/1 kV                            | 70       |\n| LGA (4x150) MM2 DE COBRE INCLUSO BANDEJA CIEGA Y TUBO ENTERRADO | 5x150 mm², 0,6/1 kV                           | 62       |\n| LGA (4x185) MM2 DE COBRE INCLUSO BANDEJA CIEGA Y TUBO ENTERRADO | 5x185 mm², 0,6/1 kV                           | 181      |\n| LGA (4x240) MM2 DE COBRE INCLUSO BANDEJA CIEGA Y TUBO ENTERRADO | 5x240 mm², 0,6/1 kV                           | 61       |\n| CUADRO DE RED/GRUPO                                 | -                                               | 1        |\n| DERIVACIÓN INDIVIDUAL A CUADRO PRINCIPAL 5x16 mm2. Cu | 5x16 mm²                                       | 179      |\n| DERIVACIÓN INDIVIDUAL A CUADRO PRINCIPAL 5x35 mm2. Cu | 5x35 mm²                                       | 49       |\n| DERIVACIÓN INDIVIDUAL A CUADRO PRINCIPAL 5x50 mm2. Cu | 5x50 mm²                                       | 48       |\n| DERIVACIÓN INDIVIDUAL A CUADRO PRINCIPAL 5x95 mm2. Cu | 5x95 mm²                                       | 60       |\n| LÍNEA RZ1 A CUADRO SECUNDARIO 5x6 mm2. Cu          | 5x6 mm²                                        | 812      |\n| LÍNEA RZ1 A CUADRO SECUNDARIO 3x6 mm2. Cu          | 3x6 mm²                                        | 139      |\n| LÍNEA RZ1 A CUADRO SECUNDARIO 5x35 mm2. Cu         | 5x35 mm²                                       | 76       |\n| LÍNEA RZ1 A CUADRO SECUNDARIO 5x95 mm2. Cu         | 5x95 mm²                                       | 47       |\n| LÍNEA DE CONMUTACIÓN SEGURFOC 5x6 mm2. Cu          | 5x6 mm²                                        | 48       |\n| LÍNEA DE CONMUTACIÓN SEGURFOC 5x10 mm2. Cu         | 5x10 mm²                                       | 45       |\n| LÍNEA DE CONMUTACIÓN SEGURFOC 5x16 mm2. Cu         | 5x16 mm²                                       | 52       |\n| DISTRIBUCIÓN SERVICIOS COMUNES Y LINEAS DESDE CUADROS | -                                               | 1        |\n| CUADRO GENERAL DE SÓTANO CON CONMUNTACION RED/GRUPO | -                                               | 1        |\n| CUADRO GENERAL DE ZONAS COMUNES                     | -                                               | 1        |\n| CUADRO GENERAL DE PORTAL 1 CON CONMUNTACION RED/GRUPO | -                                               | 1        |\n| CUADRO GENERAL DE PORTAL 2                           | -                                               | 1        |\n| CUADRO GENERAL DE PORTAL 3                           | -                                               | 1        |\n| CUADRO GENERAL DE CLIMATIZACION Y ACS                | -                                               | 1        |\n| CUADRO SECUNDARIO DE SOTANO 2 CON CONMUNTACION RED/GRUPO | -                                               | 1        |\n| CUADRO SECUNDARIO DE EXTRACCIÓN PS1 NA              | -                                               | 1        |\n| CUADRO SECUNDARIO DE EXTRACCIÓN PS1 NB              | -                                               | 1        |\n| CUADRO SECUNDARIO DE EXTRACCIÓN PS2 NA              | -                                               | 1        |\n| CUADRO SECUNDARIO DE EXTRACCIÓN PS2 NB              | -                                               | 1        |\n| CUADRO SECUNDARIO DE EXTRACCIÓN PS2 NC              | -                                               | 1        |\n| CUADRO SECUNDARIO DE PCI                             | -                                               | 1        |\n| CUADRO SECUNDARIO DE RITI                            | -                                               | 1        |\n| CUADRO SECUNDARIO DE RITS                            | -                                               | 1        |\n| CUADRO SECUNDARIO DE PISCINA                         | -                                               | 1        |\n| LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE FONTANERÍA | -                                               | 1        |\n| LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE CONSERJERÍA | -                                               | 1        |\n| LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE CLUB SOCIAL | -                                               | 1        |\n| LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE GIMNASIO | -                                               | 1        |\n| LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE TRASTERO 1 PS1 | -                                               | 1        |\n| LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE TRASTERO 2 PS1 | -                                               | 1        |\n| LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE TRASTERO 2 PS2 | -                                               | 1        |\n| LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE TRASTERO 3 PS2 | -                                               | 1        |\n| LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO CLIMATIZACIÓN/ACS | -                                               | 1        |\n| LÍNEAS DE DISTRIBUCIÓN DESDE CUADROS SECUNDARIOS DE ASCENSORES | -                                               | 3        |\n| CABLEADO DE TODOS LOS PUNTOS DE LUZ                 | -                                               | 1        |\n| DETECTOR DE PRESENCIA                                | 2x16 A+T                                       | 86       |\n| PUNTOS DE LUZ Y LAMP. EN HUECO ASCENSOR             | -                                               | 3        |\n| PULSADOR DE SUPERFICIE TEMPORIZADO                  | -                                               | 21       |\n| PULSADOR DE EMPOTRADO TEMPORIZADO                   | -                                               | 15       |\n| INTERRUPTOR DE LUZ SENCILLO ESTANCO C/CASQUILLO Y BOMBILLA | -                                               | 30       |\n| INTERRUPTOR DE LUZ SENCILLO C/CASQUILLO Y BOMBILLA  | -                                               | 18       |\n| INTERRUPTOR SENCILLO                                  | -                                               | 20       |\n| INTERRUPTOR SENCILLO ESTANCO                         | -                                               | 20       |\n| TOMA DE USOS VARIOS DE 16A.                          | -                                               | 39       |\n| TOMA DE USOS VARIOS ESTANCA                          | -                                               | 43       |\n| CAJA SUELO 4 UV Y 2 DATOS                            | -                                               | 2        |\n| LÍNEA PARA PUERTA AUTOMÁTICA DE GARAJE              | -                                               | 1        |\n| R.T.R. (REGISTRO TERMINACIÓN DE RED)                 | 500x600x80 cm                                  | 3        |\n| LUMINARIAS ZONAS COMUNES OLIVA                       | -                                               | 1        |\n| PP_P088-24_ZONAS COMUNES_BOADILLA                    | -                                               | 1        |\n| -LT01 321OLM10082027120-                             | -                                               | 1        |\n| S1427M1140 Línea LED 14,4W/M, 1730Lm/m, IP20, CRI90, 2700ºK Opt.120º. 182 LED/m (Rollo 5m) | - | 17       |\n| 12 LAMPARAS LED                                      | -                                               | 17       |\n| -LT02 321OLM10122027120-                             | -                                               | 1        |\n| S1427M1140 Línea LED 19,2W/M, 2300Lm/m, IP20, CRI90, 2700ºK Opt.120º. 240 LED/m (Rollo 5m) | - | 6        |\n| 12 LAMPARAS LED                                      | -                                               | 6        |\n| -P-LT01 + P-LT02 + P-LR01 474OLV200603EM-            | -                                               | 1        |\n| Perfil de empotrar retranqueado largo 1m, De aluminio color gris | - | 93       |\n| Difusor Opal                                         | -                                               | 93       |\n| Set de 2 tapas                                       | -                                               | 36       |\n| Conector Lineal                                      | -                                               | 27       |\n| Clip montaje                                         | -                                               | 345      |\n| -LG01 + LV01 + LG03 + LR01 321OLM10066727120-        | -                                               | 1        |\n| S962761140 Línea LED 9,6W/M, 1040Lm/m, IP67, CRI90, 2700ºK Opt.120º. 120 LED/m (Rollo 5m) | - | 40       |\n| -LG02 321OLM10116727120-                             | -                                               | 1        |\n| S142761140 Línea LED 14,4W/M, 1730Lm/m, IP67, CRI90, 2700ºK Opt.120º. 182 LED/m (Rollo 5m) | - | 28       |\n| 12 LAMPARAS LED                                      | -                                               | 28       |\n| -P-LG01 P-LV01 P-LG02 P-LG03 474OLV201203SP-         | -                                               | 1        |\n| Perfil de superficie LARGO 1M De aluminio color gris  | -                                               | 255      |\n| Difusor BLANCO                                       | -                                               | 255      |\n| Kit tapas                                           | -                                               | 102      |\n| SUJECION METÁLICA                                   | -                                               | 377      |\n| MANIPULADO LUMINARIA SIMPLE                          | -                                               | 65       |\n| cable sección redonda negro PVC                      | -                                               | 75       |\n| -LE01 321OLM10052027120-                             | -                                               | 1        |\n| S962721140 Línea LED 9,6W/M, 840Lm/m, IP20, CRI90, 2700ºK Opt.120º. 120 LED/m (Rollo 5m) | - | 15       |\n| -P-LE01 321OLM200203SP-                              | -                                               | 1        |\n| Perfil de superficie UNIDAD DE 2M, De aluminio color gris | - | 13       |\n| Difusor Opal                                         | -                                               | 13       |\n| Tapa final hueco                                     | -                                               | 2        |\n| Tapa final                                           | -                                               | 2        |\n| Clip Montaje                                         | -                                               | 15       |\n| -LM01 321OLM10052027120 + LM02 321OLM10052027120-    | -                                               | 1        |\n| S962721140 Línea LED 9,6W/M, 840Lm/m, IP20, CRI90, 2700ºK Opt.120º. 120 LED/m (Rollo 5m) | - | 3        |\n| -P-LM01 P-LM02 321OLM200303EM-                       | -                                               | 1        |\n| Perfil de empotrar UNIDAD DE 2M, De aluminio color gris | - | 8        |\n| Difusor Opal                                         | -                                               | 8        |\n| TAPA FINAL HUECO                                     | -                                               | 4        |\n| TAPA FINAL                                           | -                                               | 4        |\n| CLIP DE MONTAJE                                      | -                                               | 45       |\n| -D 60w F IP20 321OLM30046020F-                       | -                                               | 1        |\n| MD26000620 Driver Remoto 60w, IP20, 24V. (Oculto en Registro) Dim. (180x52x30 mm ) Regulación ON-OFF | - | 29       |\n| -D 75w F IP20 321 MTL 3005 75 20 F-                   | -                                               | 1        |\n| MD27500320 Driver remoto 75w IP20 24V (Oculto en Registro)Dimensiones (180x52x33 ) Regulación ON-OFF | - | 51       |\n| -D 90w F IP20 321 MTL 3006 90 20 F-                   | -                                               | 1        |\n| MD27900620 Driver remoto 90w IP20 24V (Oculto en Registro)Dimensiones (190x65x22 ) Regulación ON-OFF | - | 1        |\n| -D 120wF IP20 321 MTL 3008 120 20 F-                  | -                                               | 1        |\n| MD28000620 Driver remoto 120w IP20 24V (Oculto en Registro)Dimensiones (300x40x30 ) Regulación ON-OFF | - | 2        |\n| -D 30w F IP67 321 MTL 3019 30 67 F-                   | -                                               | 1        |\n| MD29000320 Driver remoto 30w IP67 24V (Oculto en Registro)Dimensiones (131x42x34 ) Regulación ON-OFF | - | 43       |\n| -L01 260OLV400901652724F-                             | -                                               | 1        |\n| ZZZ Empotrado Circular fijo 3w, 136lm, IP65, CRI90, 2700k, Ópt.24º. De aluminio color blanco. Regulación ON-OFF | - | 100      |\n| -L02 260OLV401001652730F-                             | -                                               | 1        |\n| ZZZ Empotrado Circular fijo 5w, 240lm, IP65, CRI90, 2700k, Ópt.30º. De aluminio color blanco Regulación ON-OFF | - | 57       |\n| -L03 273OLV903001662700F-                             | -                                               | 1        |\n| ZZZ Plafond de superficie Circular fijo 25w, 1842lm, IP66, CRI90, 2700k, Ópt.00º. De policarbonato color blanco Regulación ON-OFF | - | 42       |\n| -L05 163OLV7009036540140F-                             | -                                               | 1        |\n| ZZZ Pantalla estanca de superficie 36w, 13396lm, IP65, CRI80, 4000k, Ópt.140º. De policarbonato color Gris difusor opal.Regulación ON-OFF | - | 36       |\n| -L06 163OLV403101444070F-                             | -                                               | 1        |\n| ZZZ Empotrado Circular fijo 12w, 1225lm, IP44, CRI90, 2700k, Ópt.70º. De aluminio color blanco Regulación ON-OFF | - | 53       |\n| PROYECTOR DE EXTERIOR ORIENTABLE                     | 8w, 430 lm, IP65, CRI80, 3000k, Ópt.28º. De aluminio color negro. Regulación ON-OFF | 5        |\n| LUMINARIAS ZONAS EXTERIORES OLIVA                    | -                                               | 1        |\n| EMPOTRADO MODULO LED                                  | 6w, 630 lm, IP20, CRI90, 2700k, Ópt.48º. De aluminio color blanco+negro retranqueado. Regulación ON-OFF | 3        |\n| LÍNEA LED                                            | 9,6 w/m, 1040 lm/m, IP67, CRI90, 3000k, Ópt.120º. 120 Puntos/m (rollo 5m) | 1        |\n| PERFIL DE EMPOTRAR RETRANQUEADO                      | Largo 1m, De aluminio color gris                 | 3        |\n| SILICONA LED                                         | 24V, 7w/m, 410Lm/M, IP65, CRI90, 3000k, Ópt.120º. | 133      |\n| PERFIL DE SUPERFICIE PARA LED                         | -                                               | 134      |\n| LÍNEA LED NEON SUMERGIBLE PISCINA                    | 8w/m, 545lm/m, IP67, CRI90, 3000k, Ópt.120º. - Puntos/m.(1m) | 15       |\n| PERFIL DE SUPERFICIE LARGO ALTO                       | 1m, De aluminio color gris claro con difusor opal | 16       |\n| DRIVER REMOTO                                        | 30w IP67 24V (Oculto en Registro)Dimensiones (131x42x34 ) Regulación ON-OFF | 7        |\n| DRIVER REMOTO                                        | 60w IP67 24V (Oculto en Registro)Dimensiones (131x42x34mm ) Regulación ON-OFF | 21       |\n| PROYECTOR ORIENTABLE DE EXTERIOR                     | 6w, 650 lm, IP65, CRI90, 3000k,Ópt.30º. De aluminio color gris oscuro luz directa. Regulación ON-OFF | 19       |\n| BALIZA DE PARED                                      | 3,5w, 252lm, IP65, CRI80, 3000k, Ópt.ASMº. De aluminio color blanco. Regulación ON-OFF | 23       |\n| ZZZ Driver 24w 24v                                   | -                                               | 2        |\n| ZZZ Empotrado Circular fijo 3w, 240lm, IP65, CRI90, 2700k, Ópt.30º. De aluminio color negro. Regulación ON-OFF | - | 4        |\n| ZZZ Ecotasa                                          | -                                               | 4        |\n| ZZZ Baliza empotrada sumergible Circular 7w, 463lm, IP68, CRI80, 2700k, Ópt.68º. De aluminio color acero Regulación ON-OFF | - | 5        |\n| ZZZ Farola con 3 proyectores orientables, luz directa, LED 41W, 3712Lm IP66, CRI80, 3000K, Ópt. 45º. De Aluminio color corten.Regulación DALI. ON-OFF | - | 7        |\n| ZZZ Luminaria exterior de superfície 12,5w, 785lm, IP65, CRI80, 2700k, Ópt.28º. De aluminio color gris oscuroRegulación ON-OFF | - | 2        |\n| BANDEJA PEMSABAND 400x60mm                           | -                                               | 69       |\n| BANDEJA PEMSABAND 300x60mm                           | -                                               | 67       |\n| BANDEJA PEMSABAND 200x60mm                           | -                                               | 359      |\n| PRUEBAS DE C.G.M.P.+EQUILIBRADO FASES+CONT. TIERRAS+CIRC.EQUIPOT | -                                               | 1        |\n| DERIVACIÓN INDIVIDUAL 3(1x25)mm2 Cu                  | -                                               | 706      |\n| DERIVACIÓN INDIVIDUAL 3(1x35)mm2 Cu                  | -                                               | 2228     |\n| CUADRO DE MANDO Y PROT. VIV CON PROT. CONTRA SOBRETEN. (2 Y 3 D) | -                                               | 36       |\n| CUADRO DE MANDO Y PROT. VIV CON PROT. CONTRA SOBRETEN. (DUPLEX) | -                                               | 1        |\n| LINEA DISTR. CIRCUITO C1                             | Ø 16 mm, 2x1,5+T mm²                           | 48       |\n| LINEA DISTR. CIRCUITO C2                             | Ø 20 mm, 2x2,5+T mm²                           | 96       |\n| LINEA DISTR. CIRCUITO C3                             | Ø 25 mm, 2x6+T mm²                             | 48       |\n| LINEA DISTR. CIRCUITO C4                             | Ø 20 mm, 2x2,5+T mm²                           | 96       |\n| LINEA DISTR. CIRCUITO C5                             | Ø 20 mm, 2x2,5+T mm²                           | 48       |\n| LINEA DISTR. CIRCUITO C6                             | Ø 16 mm, 2x1,5+T mm²                           | 12       |\n| LINEA DISTR. CIRCUITO C7                             | Ø 20 mm, 2x2,5+T mm²                           | 24       |\n| LINEA DISTR. CIRCUITO C9                             | Ø 25 mm, 2x6+T mm²                             | 48       |\n| LINEA DISTR. CIRCUITO C10                            | Ø 20 mm, 2x2,5+T mm²                           | 48       |\n| LINEA DISTR. CIRCUITO C11 DOMOTICA                   | Ø 20 mm, 2x2,5+T mm²                           | 48       |\n| LINEA DISTR. CIRCUITO C12                            | Ø 20 mm, 2x2,5+T mm²                           | 48       |\n| LINEA DISTR. CIRCUITO DE VENTILADOR                  | Ø 20 mm, 2x2,5+T mm²                           | 48       |\n| RED EQUIPOTENCIAL VIVIENDA                           | -                                               | 156      |\n| PUNTO DE LUZ SENCILLO MANDANDO SOBRE UNA LUMINARIA   | -                                               | 327      |\n| PUNTO DE LUZ SENCILLO MANDANDO SOBRE DOS LUMINARIAS  | -                                               | 60       |\n| PUNTO DE LUZ CONMUTADO MANDANDO SOBRE UNA LUMINARIA   | -                                               | 180      |\n| PUNTO DE LUZ CONMUTADO MANDANDO SOBRE DOS LUMINARIAS  | -                                               | 84       |\n| PUNTO DE LUZ CONMUTADO MANDANDO SOBRE TRES LUMINARIAS | -                                               | 72       |\n| PUNTO DE LUZ CONMUTADO MANDANDO SOBRE CUATRO LUMINARIAS | -                                             | 12       |\n| PUNTO DE LUZ DE CRUZAMIENTO MANDANDO SOBRE UNA LUMINARIA | -                                               | 93       |\n| PUNTO DE LUZ DOBLE MANDANDO SOBRE UNA LUMINARIA      | -                                               | 48       |\n| PUNTO DE LUZ DOBLE MANDANDO UNO SOBRE DOS Y UNA LUMINARIA | -                                               | 108      |\n| PUNTO DE LUZ CONMUTADO MANDANDO SOBRE DOS TOMAS DE USOS VARIOS | -                                               | 48       |\n| DOBLE PULSADOR PARA SUBIDA Y BAJADA DE PERSIANAS     | -                                               | 381      |\n| TOMA DE USOS VARIOS GENERALES 16 A.                   | -                                               | 1,521    |\n| TOMA DE USOS VARIOS GENERALES 16 A CON 2 USB          | -                                               | 234      |\n| TOMA DE USOS VARIOS ESTANCA 16 A.                     | -                                               | 108      |\n| TOMA DE USOS VARIOS PARA LAVAV/FRIG/CAMPANA/LAVAD/MICROONDAS | - | 240      |\n| TOMA DE USOS VARIOS PARA COCINA-HORNO                 | -                                               | 96       |\n| PUNTO PULSADOR TIMBRE                                 | -                                               | 48       |\n| APLIQUE PARED EXTERIOR UP&DOWN 6W IP66                | 6w, 500 lm, IP66, CRI80, 2700k,Ópt.60º. De aluminio color gris antracita | 326      |\n| LUMINARIA EMPOTRAR 12W                               | 12w, 1145 lm, IP20, CRI90, 3000k, Ópt.60º. De aluminio color blanco. Regulación ON-OFF | 156      |\n| LUMINARIA EMPOTRAR MODULO LED 6W                     | 6w, 630 lm, IP20, CRI90, 3000k, Ópt.48º. De aluminio color blanco retranqueado. Regulación ON-OFF | 729      |\n| TIRA LED INTERIOR 9W/LM IP65 CON PERFIL Y DRIVER     | 9w/m, 920lm/m, IP65, CRI90, 2700k, Ópt.120º. 120 Puntos/m. | 363      |\n| TIRA LED EXTERIOR 9W/LM IP65 CON PERFIL Y DRIVER     | 9w/m, 920lm/m, IP65, CRI90, 2700k, Ópt.120º. 120 Puntos/m. | 330      |\n| PICA TOMA DE TIERRA 2,5 m C/TAPA REGISTRO            | Pica cobrizada de D=14,3 mm. y 2 m. de longitud | 1        |\n| CONDUCTOR UNIPOLAR DE COBRE 35 mm2                    | Conductor de cobre desnudo de 35 mm2            | 14       |\n| SOLDADURA ALUMINOTÉRMICA                              | Punto de soldadura aluminotérmica para red de tierras | 987      |\n| ARQUETA CON TOMA DE TIERRA REGLAMENTARIA              | Incluida arqueta de 51x51 cm, pica de acero cobrizado de l= 2m. y D=14,6 mm. | 280      |\n| PROYECTO TÉCNICO Y BOLETÍN.                          | Proyecto, Boletín y entrega de documentación     | 10       |\n| GetFace IP - Unidad básica con cámara                 | -                                               | 1        |\n| GetFace IP - Módulo de teclado                        | -                                               | 1        |\n| GetFace IP - Panel de información                     | -                                               | 1        |\n| GetFace IP - Instalación empotrada - Marco - 3 módulos (se instala con ZVP-FBOX3) | - | 1        |\n| GetFace IP - Instalación empotrada - Caja - 3 módulos (se instala con ZVP-FFRA3) | - | 1        |\n| GetFace IP - Cerradura eléctrica 12V/280mA DC         | -                                               | 1        |\n| GetFace IP - Fuente de alimentación 12VDC (out) 2A/ 110-230VAC (in) | - | 1        |\n| GetFace IP - Firewall + Switch para hasta 8 apartamentos | - | 1        |\n| 3xGetFace IP - Switch 8 Ports (hasta 60 viviendas)   | -                                               | 1        |\n| 3xGetFace IP - Switch 16 puertos                      | -                                               | 1        |\n| 48xGetFace IP - Router de Seguridad para edificio de viviendas con red Zennio | - | 1        |\n| KUPSupply 160mA. Fuente de alimentación universal KNX 160mA con 29VDC auxiliar | - | 1        |\n| Z50 - Pantalla táctil capacitiva de 5\" - Blanco       | -                                               | 1        |\n| Z50-Z70-Z100. Intercom License - Integración con el sistema de video portero Zennio Getface IP | - | 1        |\n| GetFace IP - Router de Seguridad para edificio de viviendas con red Zennio | - | 1        |\n| GetFace IP - ZenCom App License - 1 por vivienda. Recepción de llamada desde Zennio Getface IP (Válida por 5 años) | - | 1        |\n| Documentación y programación básica de proyecto de vídeo portería de edificios de vivienda con 1 unidad GetFace IP y hasta 7 apt | - | 1        |\n| 5xProgramación adicional de hasta 10 apartamentos más respecto 8500024 (se requiere 8500024) | - | 1        |\n| Programación adicional de hasta 3 unidades GetFace IP más respecto 8500024 (se requiere 8500024) | - | 1        |\n| Partida completa de luminarias de emergencias de la marca OLIVA. Se incluye instalación y parte proporcional de elementos de sujección, conexión y montaje, tales como cableado, abrazaderas y resto de elementos. Se incluyen las siguientes luminarias de emergencias: | - | 1        |\n| XXX EMERGENCIAS                                      | -                                               | 1        |\n| XXX -EM1 097OLV00020120CAEVEM-                       | -                                               | 1        |\n| ZZZ Luminaria de emergecia; no permanente, Ópt. EVACUACION, IP20. De aluminio color blanco. CON AUTOTEST | - | 1        |\n| XXX -EM2 097OLV00020120CAAPEM-                       | -                                               | 1        |\n| ZZZ Luminaria de emergecia, no permanente, Ópt. De ANTIPÁNICO, IP20. De aluminio color blanco. CON AUTOTEST | - | 18       |\n| XXX -EM3 097OLV00100166CAAPSP-                       | -                                               | 1        |\n| ZZZ Luminaria de emergecia estanca, no permanente, Ópt. De ANTIPÁNICO, IP66. De policarbonato color blanco. CON AUTOTEST | - | 71       |\n| ZZZ CAJA Estanca                                     | -                                               | 1        |\n| XXX -EM4 097OLV00110166CAAPEM-                       | -                                               | 1        |\n| ZZZ Luminaria de emergecia con marco de empotrar, no permanente, Ópt. De ANTIPÁNICO, IP66. De policarbonato color blanco. CON AUTOTEST | - | 29       |\n| ZZZ CAJA                                           | -                                               | 1        |\n| EQUIPAMIENTO RECINTO INFERIOR (RITI)                 | -                                               | 1        |\n| CUADRO PROTECCIÓN PARA RITI                          | -                                               | 1        |\n| EQUIPAMIENTO RECINTO SUPERIOR (RITS)                 | -                                               | 1        |\n| CUADRO PROTECCIÓN PARA RITS                          | -                                               | 1        |\n| COMPROBACIONES Y PROTOCOLO DE PRUEBAS                | -                                               | 1        |\n| **Punto Derivación 4 vías, TELEVÉS 417**             | Derivador de 4 salidas, 17 dB de atenuación para TV terrestre y 17,5 dB para FI | 6        |\n| **Punto Derivación 4 vías, TELEVÉS 420**             | Derivador de 4 salidas, 20,5 dB de atenuación para TV terrestre y 20 dB para FI | 2        |\n| **Punto Distribución 2 vías, TELEVÉS 519502**        | Distribuidor de 2 salidas, 5 dB de atenuación para TV terrestre y 4 dB para FI | 8        |\n| **Punto PAU+Distribución de 2 vías, TELEVÉS 519532** | PAU+distribuidor de 2 salidas, 5-2.400 MHz, 5,0 dB de atenuación para TV terrestre y 4,0 dB para FI | 1        |\n| **Punto PAU+Distribución de 3 vías, TELEVÉS 519533** | PAU+distribuidor de 3 salidas, 5-2.400 MHz, 8,0 dB de atenuación para TV terrestre y 7,0 dB para FI | 1        |\n| **Punto PAU+Distribución de 6 vías, TELEVÉS 519536** | PAU+distribuidor de 6 salidas, 5-2.400 MHz, 12 dB de atenuación para TV terrestre y 11 dB para FI | 16       |\n| **Punto PAU+Distribución de 8 vías, TELEVÉS 5433**   | PAU+distribuidor de 8 salidas, 5-2.400 MHz, 14 dB de atenuación para TV terrestre y 16 dB para FI | 32       |\n| **Cableado 4 pares UTP Cat. 6 LSFH Dca TELEVÉS 2123**| Cable 4 pares UTP Cat. 6, cubierta libre de halógenos | 7,523    |\n| **Cableado Multifibra 2 F.O. Monomodo LSFH Dca TELEVÉS 231901** | Cable de 2 F.O. Rojo-Verde monomodo 9/125 G.657 A2 | 1,321    |\n| **Punto Interconexión Fibra Óptica Armario Rack 19\" 24Ux60x60** | Armario VDI cerrado 24U 600(A)x600(F) mm | 1        |\n| **Pto. Distrib. Fibra óptica (8 fibras) TELEVÉS 231301** | Caja de segregación de hasta 8 fibras ópticas | 1        |\n| **PAU Pares Trenzados MUX 1 entrada 8+1 salidas TELEVÉS 546501** | Multiplexor pasivo de 1 entrada y 8 salidas RJ-45 | 14       |\n| **PAU Cables de Fibra Óptica 2 adaptadores SC (h) TELEVÉS 2315** | Roseta de fibra óptica con 2 adaptadores hembra SC | 50       |\n| **ARQUETA ENTRADA 60x60x80 PREFABRICADA TAPA \"ICT\"** | Arqueta de entrada prefabricada de hormigón de dimensiones interiores 60x60x80 cm. | 48       |\n| **ARQUETA DE PASO 40x40x460 PREFABRICADA TAPA \"ICT\"** | Arqueta de entrada prefabricada de hormigón de dimensiones interiores 40x40x40 cm. | 1        |\n| **CANALIZACIÓN EXTERNA ENTERRADA PVC 6 Ø 63**       | Canalización externa en zanja bajo acera de 45x93 cm. para 6 conductos, en base 4, de PVC de 63 mm. de diámetro | 1        |\n| **CANALIZACIÓN ENLACE INFERIOR - TUBO PLÁSTICO 6 Ø 50** | Canalización de enlace inferior, formada por 6 tubos de material plástico de Ø 50 mm | 21       |\n| **CANALIZACIÓN PRINCIPAL - BANDEJA PVC 60 x 200 mm** | Canalización Principal Horizontal, formada por bandeja de PVC-M1 de 60 x 200 mm, perforada | 27       |\n| **CANALIZACIÓN PRINCIPAL - TUBO PLÁSTICO Ø 50**     | Canalización principal, formada por tubos de material plástico de Ø 50 mm | 60       |\n| **CANALIZACIÓN SECUNDARIA ACCESO EMP. PVC 3 Ø 25**  | Canalización secundaria en montaje empotrado, formada por 3 tubos de PVC corrugado forrado de Ø 25 mm | 570      |\n| **CANALIZACIÓN SECUNDARIA ACCESO SUP. PVC RÍGIDO 3 Ø 25** | Canalización secundaria en montaje superficial, formada por 3 tubos de PVC rígido de Ø 25 mm | 609      |\n| **CANALIZACIÓN LÍNEA ASCENSOR PVC Ø 25**             | Canalización empotrada para acometida de ascensores, formada por 1 tubo de PVC corrugado forrado de Ø 25 mm | 117      |\n| **CANALIZACIÓN INTERIOR PVC Ø 20**                   | Canalización empotrada para interior de usuario, formada por 1 tubo de PVC corrugado forrado de Ø 20 mm | 30       |\n| **REGISTRO ENLACE INFERIOR ARMARIO**                 | 45x45x12 cm, acero galvanizado, IP 33, IK7      | 14       |\n| **REGISTRO SECUNDARIO 45x45x15 CON PUERTA EI2 60**   | 45x45x15 cm, con puerta resistente al fuego EI2 60 | 2        |\n| **REGISTRO SECUNDARIO AMPLIFICACIÓN 45x45x15 CON PUERTA EI2 60** | 45x45x15 cm, con puerta resistente al fuego EI2 60 | 14       |\n| **REGISTRO SECUNDARIO ARMARIO 45x45x15**             | 45x45x15 cm, armario metálico, IP 33, IK7       | 3        |\n| **REGISTRO SECUNDARIO ARMARIO 50x70x15**             | 50x70x15 cm, armario metálico, IP 33, IK7       | 5        |\n| **REGISTRO PASO 13x18x8 cm**                          | 13x18x8 cm, grado de protección IP 66, IK 5      | 1        |\n| **REGISTRO PASO TIPO \"MINIPAU\" 20x30x6 cm**          | 20x30x6 cm, grado de protección IP 33, IK 5      | 7        |\n| **REGISTRO PASO TIPO C 10x16x4 cm**                   | 10x16x4 cm, grado de protección IP 55, IK 10     | 42       |\n| **REGISTRO TERMINACIÓN DE RED 50x60x8 cm**           | 50x60x8 cm, armario metálico, IP 33, IK 5       | 3        |\n| **REGISTRO DE TOMA CONFIGURABLE/COAX 64x64x42 cm**   | 64x64x42 cm, grado de protección IP 33, IK 5     | 50       |\n\nSi necesitas más información o alguna modificación adicional, házmelo saber."
+          }
+        }
+      }
+    ],
+    "formateo": [
+      {
+        "json": {
+          "output": {
+            "tabla": [
+              {
+                "material": "CANALIZACION ENTUBADA ENTERRADA",
+                "medida": "Ø 160 mm",
+                "cantidad_unidades": 26
+              },
+              {
+                "material": "LINEA BT 3X240+1X150",
+                "medida": "3x240 + 1x150 mm² AI",
+                "cantidad_unidades": 225
+              },
+              {
+                "material": "TERMINALES BT CGP",
+                "medida": "-",
+                "cantidad_unidades": 5
+              },
+              {
+                "material": "TERMINALES BT CBT",
+                "medida": "-",
+                "cantidad_unidades": 5
+              },
+              {
+                "material": "TRAMITACION LICENCIA AYUNTAMIENTO",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "REALIZACIÓN DE ENSAYOS",
+                "medida": "-",
+                "cantidad_unidades": 5
+              },
+              {
+                "material": "PROYECTO BT",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "PLANO CARTOGRÁFICO",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "TRAMITACIÓN CON LA COMPAÑIA ELECTRICA Y PAGO DERECHOS DE ENGANCH",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CENTRO DE TRANSFORMACIÓN 400 KVAS",
+                "medida": "400 kVA, edificio prefabricado, 20 kV, 420 V",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "PREVISION ACOMETIDA CGP (4x240) MM2 DE ALUMINIO ENTERRADA",
+                "medida": "4x240 mm², 1x150 mm², Ø 160 mm",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CAJA GENERAL DE PROTECCIÓN DE 250A",
+                "medida": "250 A",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CAJA GENERAL DE PROTECCIÓN Y MEDIDA 160A",
+                "medida": "160 A",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CENTRALIZACION DE CONTADORES PORTAL 1 + 16 VIVIENDAS PORTAL 1",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CENTRALIZACION DE CONTADORES PORTAL 2 + 16 VIVIENDAS PORTAL 2",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CENTRALIZACION DE CONTADORES PORTAL 3 + 16 VIVIENDAS PORTAL 3",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CENTRALIZACION DE CONTADORES SÓTANO + ZONAS COMUNES + REC. VEHIC",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CENTRALIZACION DE CONTADORES CLIMATIZACIÓN",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CENTRALIZACION DE CONTADORES LÍNEA DE SOCORRO",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "LGA (4x70) MM2 DE COBRE INCLUSO BANDEJA CIEGA Y TUBO ENTERRADO",
+                "medida": "5x35 mm², 0,6/1 kV",
+                "cantidad_unidades": 70
+              },
+              {
+                "material": "LGA (4x150) MM2 DE COBRE INCLUSO BANDEJA CIEGA Y TUBO ENTERRADO",
+                "medida": "5x150 mm², 0,6/1 kV",
+                "cantidad_unidades": 62
+              },
+              {
+                "material": "LGA (4x185) MM2 DE COBRE INCLUSO BANDEJA CIEGA Y TUBO ENTERRADO",
+                "medida": "5x185 mm², 0,6/1 kV",
+                "cantidad_unidades": 181
+              },
+              {
+                "material": "LGA (4x240) MM2 DE COBRE INCLUSO BANDEJA CIEGA Y TUBO ENTERRADO",
+                "medida": "5x240 mm², 0,6/1 kV",
+                "cantidad_unidades": 61
+              },
+              {
+                "material": "CUADRO DE RED/GRUPO",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "DERIVACIÓN INDIVIDUAL A CUADRO PRINCIPAL 5x16 mm2. Cu",
+                "medida": "5x16 mm²",
+                "cantidad_unidades": 179
+              },
+              {
+                "material": "DERIVACIÓN INDIVIDUAL A CUADRO PRINCIPAL 5x35 mm2. Cu",
+                "medida": "5x35 mm²",
+                "cantidad_unidades": 49
+              },
+              {
+                "material": "DERIVACIÓN INDIVIDUAL A CUADRO PRINCIPAL 5x50 mm2. Cu",
+                "medida": "5x50 mm²",
+                "cantidad_unidades": 48
+              },
+              {
+                "material": "DERIVACIÓN INDIVIDUAL A CUADRO PRINCIPAL 5x95 mm2. Cu",
+                "medida": "5x95 mm²",
+                "cantidad_unidades": 60
+              },
+              {
+                "material": "LÍNEA RZ1 A CUADRO SECUNDARIO 5x6 mm2. Cu",
+                "medida": "5x6 mm²",
+                "cantidad_unidades": 812
+              },
+              {
+                "material": "LÍNEA RZ1 A CUADRO SECUNDARIO 3x6 mm2. Cu",
+                "medida": "3x6 mm²",
+                "cantidad_unidades": 139
+              },
+              {
+                "material": "LÍNEA RZ1 A CUADRO SECUNDARIO 5x35 mm2. Cu",
+                "medida": "5x35 mm²",
+                "cantidad_unidades": 76
+              },
+              {
+                "material": "LÍNEA RZ1 A CUADRO SECUNDARIO 5x95 mm2. Cu",
+                "medida": "5x95 mm²",
+                "cantidad_unidades": 47
+              },
+              {
+                "material": "LÍNEA DE CONMUTACIÓN SEGURFOC 5x6 mm2. Cu",
+                "medida": "5x6 mm²",
+                "cantidad_unidades": 48
+              },
+              {
+                "material": "LÍNEA DE CONMUTACIÓN SEGURFOC 5x10 mm2. Cu",
+                "medida": "5x10 mm²",
+                "cantidad_unidades": 45
+              },
+              {
+                "material": "LÍNEA DE CONMUTACIÓN SEGURFOC 5x16 mm2. Cu",
+                "medida": "5x16 mm²",
+                "cantidad_unidades": 52
+              },
+              {
+                "material": "DISTRIBUCIÓN SERVICIOS COMUNES Y LINEAS DESDE CUADROS",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CUADRO GENERAL DE SÓTANO CON CONMUNTACION RED/GRUPO",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CUADRO GENERAL DE ZONAS COMUNES",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CUADRO GENERAL DE PORTAL 1 CON CONMUNTACION RED/GRUPO",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CUADRO GENERAL DE PORTAL 2",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CUADRO GENERAL DE PORTAL 3",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CUADRO GENERAL DE CLIMATIZACION Y ACS",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CUADRO SECUNDARIO DE SOTANO 2 CON CONMUNTACION RED/GRUPO",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CUADRO SECUNDARIO DE EXTRACCIÓN PS1 NA",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CUADRO SECUNDARIO DE EXTRACCIÓN PS1 NB",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CUADRO SECUNDARIO DE EXTRACCIÓN PS2 NA",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CUADRO SECUNDARIO DE EXTRACCIÓN PS2 NB",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CUADRO SECUNDARIO DE EXTRACCIÓN PS2 NC",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CUADRO SECUNDARIO DE PCI",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CUADRO SECUNDARIO DE RITI",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CUADRO SECUNDARIO DE RITS",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CUADRO SECUNDARIO DE PISCINA",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE FONTANERÍA",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE CONSERJERÍA",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE CLUB SOCIAL",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE GIMNASIO",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE TRASTERO 1 PS1",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE TRASTERO 2 PS1",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE TRASTERO 2 PS2",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE TRASTERO 3 PS2",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO CLIMATIZACIÓN/ACS",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADROS SECUNDARIOS DE ASCENSORES",
+                "medida": "-",
+                "cantidad_unidades": 3
+              },
+              {
+                "material": "CABLEADO DE TODOS LOS PUNTOS DE LUZ",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "DETECTOR DE PRESENCIA",
+                "medida": "2x16 A+T",
+                "cantidad_unidades": 86
+              },
+              {
+                "material": "PUNTOS DE LUZ Y LAMP. EN HUECO ASCENSOR",
+                "medida": "-",
+                "cantidad_unidades": 3
+              },
+              {
+                "material": "PULSADOR DE SUPERFICIE TEMPORIZADO",
+                "medida": "-",
+                "cantidad_unidades": 21
+              },
+              {
+                "material": "PULSADOR DE EMPOTRADO TEMPORIZADO",
+                "medida": "-",
+                "cantidad_unidades": 15
+              },
+              {
+                "material": "INTERRUPTOR DE LUZ SENCILLO ESTANCO C/CASQUILLO Y BOMBILLA",
+                "medida": "-",
+                "cantidad_unidades": 30
+              },
+              {
+                "material": "INTERRUPTOR DE LUZ SENCILLO C/CASQUILLO Y BOMBILLA",
+                "medida": "-",
+                "cantidad_unidades": 18
+              },
+              {
+                "material": "INTERRUPTOR SENCILLO",
+                "medida": "-",
+                "cantidad_unidades": 20
+              },
+              {
+                "material": "INTERRUPTOR SENCILLO ESTANCO",
+                "medida": "-",
+                "cantidad_unidades": 20
+              },
+              {
+                "material": "TOMA DE USOS VARIOS DE 16A.",
+                "medida": "-",
+                "cantidad_unidades": 39
+              },
+              {
+                "material": "TOMA DE USOS VARIOS ESTANCA",
+                "medida": "-",
+                "cantidad_unidades": 43
+              },
+              {
+                "material": "CAJA SUELO 4 UV Y 2 DATOS",
+                "medida": "-",
+                "cantidad_unidades": 2
+              },
+              {
+                "material": "LÍNEA PARA PUERTA AUTOMÁTICA DE GARAJE",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "R.T.R. (REGISTRO TERMINACIÓN DE RED)",
+                "medida": "500x600x80 cm",
+                "cantidad_unidades": 3
+              },
+              {
+                "material": "LUMINARIAS ZONAS COMUNES OLIVA",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "PP_P088-24_ZONAS COMUNES_BOADILLA",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "-LT01 321OLM10082027120-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "S1427M1140 Línea LED 14,4W/M, 1730Lm/m, IP20, CRI90, 2700ºK Opt.120º. 182 LED/m (Rollo 5m)",
+                "medida": "-",
+                "cantidad_unidades": 17
+              },
+              {
+                "material": "12 LAMPARAS LED",
+                "medida": "-",
+                "cantidad_unidades": 17
+              },
+              {
+                "material": "-LT02 321OLM10122027120-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "S1427M1140 Línea LED 19,2W/M, 2300Lm/m, IP20, CRI90, 2700ºK Opt.120º. 240 LED/m (Rollo 5m)",
+                "medida": "-",
+                "cantidad_unidades": 6
+              },
+              {
+                "material": "12 LAMPARAS LED",
+                "medida": "-",
+                "cantidad_unidades": 6
+              },
+              {
+                "material": "-P-LT01 + P-LT02 + P-LR01 474OLV200603EM-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "Perfil de empotrar retranqueado largo 1m, De aluminio color gris",
+                "medida": "-",
+                "cantidad_unidades": 93
+              },
+              {
+                "material": "Difusor Opal",
+                "medida": "-",
+                "cantidad_unidades": 93
+              },
+              {
+                "material": "Set de 2 tapas",
+                "medida": "-",
+                "cantidad_unidades": 36
+              },
+              {
+                "material": "Conector Lineal",
+                "medida": "-",
+                "cantidad_unidades": 27
+              },
+              {
+                "material": "Clip montaje",
+                "medida": "-",
+                "cantidad_unidades": 345
+              },
+              {
+                "material": "-LG01 + LV01 + LG03 + LR01 321OLM10066727120-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "S962761140 Línea LED 9,6W/M, 1040Lm/m, IP67, CRI90, 2700ºK Opt.120º. 120 LED/m (Rollo 5m)",
+                "medida": "-",
+                "cantidad_unidades": 40
+              },
+              {
+                "material": "-LG02 321OLM10116727120-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "S142761140 Línea LED 14,4W/M, 1730Lm/m, IP67, CRI90, 2700ºK Opt.120º. 182 LED/m (Rollo 5m)",
+                "medida": "-",
+                "cantidad_unidades": 28
+              },
+              {
+                "material": "12 LAMPARAS LED",
+                "medida": "-",
+                "cantidad_unidades": 28
+              },
+              {
+                "material": "-P-LG01 P-LV01 P-LG02 P-LG03 474OLV201203SP-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "Perfil de superficie LARGO 1M De aluminio color gris",
+                "medida": "-",
+                "cantidad_unidades": 255
+              },
+              {
+                "material": "Difusor BLANCO",
+                "medida": "-",
+                "cantidad_unidades": 255
+              },
+              {
+                "material": "Kit tapas",
+                "medida": "-",
+                "cantidad_unidades": 102
+              },
+              {
+                "material": "SUJECION METÁLICA",
+                "medida": "-",
+                "cantidad_unidades": 377
+              },
+              {
+                "material": "MANIPULADO LUMINARIA SIMPLE",
+                "medida": "-",
+                "cantidad_unidades": 65
+              },
+              {
+                "material": "cable sección redonda negro PVC",
+                "medida": "-",
+                "cantidad_unidades": 75
+              },
+              {
+                "material": "-LE01 321OLM10052027120-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "S962721140 Línea LED 9,6W/M, 840Lm/m, IP20, CRI90, 2700ºK Opt.120º. 120 LED/m (Rollo 5m)",
+                "medida": "-",
+                "cantidad_unidades": 15
+              },
+              {
+                "material": "-P-LE01 321OLM200203SP-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "Perfil de superficie UNIDAD DE 2M, De aluminio color gris",
+                "medida": "-",
+                "cantidad_unidades": 13
+              },
+              {
+                "material": "Difusor Opal",
+                "medida": "-",
+                "cantidad_unidades": 13
+              },
+              {
+                "material": "Tapa final hueco",
+                "medida": "-",
+                "cantidad_unidades": 2
+              },
+              {
+                "material": "Tapa final",
+                "medida": "-",
+                "cantidad_unidades": 2
+              },
+              {
+                "material": "Clip Montaje",
+                "medida": "-",
+                "cantidad_unidades": 15
+              },
+              {
+                "material": "-LM01 321OLM10052027120 + LM02 321OLM10052027120-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "S962721140 Línea LED 9,6W/M, 840Lm/m, IP20, CRI90, 2700ºK Opt.120º. 120 LED/m (Rollo 5m)",
+                "medida": "-",
+                "cantidad_unidades": 3
+              },
+              {
+                "material": "-P-LM01 P-LM02 321OLM200303EM-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "Perfil de empotrar UNIDAD DE 2M, De aluminio color gris",
+                "medida": "-",
+                "cantidad_unidades": 8
+              },
+              {
+                "material": "Difusor Opal",
+                "medida": "-",
+                "cantidad_unidades": 8
+              },
+              {
+                "material": "TAPA FINAL HUECO",
+                "medida": "-",
+                "cantidad_unidades": 4
+              },
+              {
+                "material": "TAPA FINAL",
+                "medida": "-",
+                "cantidad_unidades": 4
+              },
+              {
+                "material": "CLIP DE MONTAJE",
+                "medida": "-",
+                "cantidad_unidades": 45
+              },
+              {
+                "material": "-D 60w F IP20 321OLM30046020F-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "MD26000620 Driver Remoto 60w, IP20, 24V. (Oculto en Registro) Dim. (180x52x30 mm ) Regulación ON-OFF",
+                "medida": "-",
+                "cantidad_unidades": 29
+              },
+              {
+                "material": "-D 75w F IP20 321 MTL 3005 75 20 F-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "MD27500320 Driver remoto 75w IP20 24V (Oculto en Registro)Dimensiones (180x52x33 ) Regulación ON-OFF",
+                "medida": "-",
+                "cantidad_unidades": 51
+              },
+              {
+                "material": "-D 90w F IP20 321 MTL 3006 90 20 F-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "MD27900620 Driver remoto 90w IP20 24V (Oculto en Registro)Dimensiones (190x65x22 ) Regulación ON-OFF",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "-D 120wF IP20 321 MTL 3008 120 20 F-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "MD28000620 Driver remoto 120w IP20 24V (Oculto en Registro)Dimensiones (300x40x30 ) Regulación ON-OFF",
+                "medida": "-",
+                "cantidad_unidades": 2
+              },
+              {
+                "material": "-D 30w F IP67 321 MTL 3019 30 67 F-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "MD29000320 Driver remoto 30w IP67 24V (Oculto en Registro)Dimensiones (131x42x34 ) Regulación ON-OFF",
+                "medida": "-",
+                "cantidad_unidades": 43
+              },
+              {
+                "material": "-L01 260OLV400901652724F-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "ZZZ Empotrado Circular fijo 3w, 136lm, IP65, CRI90, 2700k, Ópt.24º. De aluminio color blanco. Regulación ON-OFF",
+                "medida": "-",
+                "cantidad_unidades": 100
+              },
+              {
+                "material": "-L02 260OLV401001652730F-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "ZZZ Empotrado Circular fijo 5w, 240lm, IP65, CRI90, 2700k, Ópt.30º. De aluminio color blanco Regulación ON-OFF",
+                "medida": "-",
+                "cantidad_unidades": 57
+              },
+              {
+                "material": "-L03 273OLV903001662700F-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "ZZZ Plafond de superficie Circular fijo 25w, 1842lm, IP66, CRI90, 2700k, Ópt.00º. De policarbonato color blanco Regulación ON-OFF",
+                "medida": "-",
+                "cantidad_unidades": 42
+              },
+              {
+                "material": "-L05 163OLV7009036540140F-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "ZZZ Pantalla estanca de superficie 36w, 13396lm, IP65, CRI80, 4000k, Ópt.140º. De policarbonato color Gris difusor opal.Regulación ON-OFF",
+                "medida": "-",
+                "cantidad_unidades": 36
+              },
+              {
+                "material": "-L06 163OLV403101444070F-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "ZZZ Empotrado Circular fijo 12w, 1225lm, IP44, CRI90, 2700k, Ópt.70º. De aluminio color blanco Regulación ON-OFF",
+                "medida": "-",
+                "cantidad_unidades": 53
+              },
+              {
+                "material": "PROYECTOR DE EXTERIOR ORIENTABLE",
+                "medida": "8w, 430 lm, IP65, CRI80, 3000k, Ópt.28º. De aluminio color negro. Regulación ON-OFF",
+                "cantidad_unidades": 5
+              },
+              {
+                "material": "LUMINARIAS ZONAS EXTERIORES OLIVA",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "EMPOTRADO MODULO LED",
+                "medida": "6w, 630 lm, IP20, CRI90, 2700k, Ópt.48º. De aluminio color blanco+negro retranqueado. Regulación ON-OFF",
+                "cantidad_unidades": 3
+              },
+              {
+                "material": "LÍNEA LED",
+                "medida": "9,6 w/m, 1040 lm/m, IP67, CRI90, 3000k, Ópt.120º. 120 Puntos/m (rollo 5m)",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "PERFIL DE EMPOTRAR RETRANQUEADO",
+                "medida": "Largo 1m, De aluminio color gris",
+                "cantidad_unidades": 3
+              },
+              {
+                "material": "SILICONA LED",
+                "medida": "24V, 7w/m, 410Lm/M, IP65, CRI90, 3000k, Ópt.120º.",
+                "cantidad_unidades": 133
+              },
+              {
+                "material": "PERFIL DE SUPERFICIE PARA LED",
+                "medida": "-",
+                "cantidad_unidades": 134
+              },
+              {
+                "material": "LÍNEA LED NEON SUMERGIBLE PISCINA",
+                "medida": "8w/m, 545lm/m, IP67, CRI90, 3000k, Ópt.120º. - Puntos/m.(1m)",
+                "cantidad_unidades": 15
+              },
+              {
+                "material": "PERFIL DE SUPERFICIE LARGO ALTO",
+                "medida": "1m, De aluminio color gris claro con difusor opal",
+                "cantidad_unidades": 16
+              },
+              {
+                "material": "DRIVER REMOTO",
+                "medida": "30w IP67 24V (Oculto en Registro)Dimensiones (131x42x34 ) Regulación ON-OFF",
+                "cantidad_unidades": 7
+              },
+              {
+                "material": "DRIVER REMOTO",
+                "medida": "60w IP67 24V (Oculto en Registro)Dimensiones (131x42x34mm ) Regulación ON-OFF",
+                "cantidad_unidades": 21
+              },
+              {
+                "material": "PROYECTOR ORIENTABLE DE EXTERIOR",
+                "medida": "6w, 650 lm, IP65, CRI90, 3000k,Ópt.30º. De aluminio color gris oscuro luz directa. Regulación ON-OFF",
+                "cantidad_unidades": 19
+              },
+              {
+                "material": "BALIZA DE PARED",
+                "medida": "3,5w, 252lm, IP65, CRI80, 3000k, Ópt.ASMº. De aluminio color blanco. Regulación ON-OFF",
+                "cantidad_unidades": 23
+              },
+              {
+                "material": "ZZZ Driver 24w 24v",
+                "medida": "-",
+                "cantidad_unidades": 2
+              },
+              {
+                "material": "ZZZ Empotrado Circular fijo 3w, 240lm, IP65, CRI90, 2700k, Ópt.30º. De aluminio color negro. Regulación ON-OFF",
+                "medida": "-",
+                "cantidad_unidades": 4
+              },
+              {
+                "material": "ZZZ Ecotasa",
+                "medida": "-",
+                "cantidad_unidades": 4
+              },
+              {
+                "material": "ZZZ Baliza empotrada sumergible Circular 7w, 463lm, IP68, CRI80, 2700k, Ópt.68º. De aluminio color acero Regulación ON-OFF",
+                "medida": "-",
+                "cantidad_unidades": 5
+              },
+              {
+                "material": "ZZZ Farola con 3 proyectores orientables, luz directa, LED 41W, 3712Lm IP66, CRI80, 3000K, Ópt. 45º. De Aluminio color corten.Regulación DALI. ON-OFF",
+                "medida": "-",
+                "cantidad_unidades": 7
+              },
+              {
+                "material": "ZZZ Luminaria exterior de superfície 12,5w, 785lm, IP65, CRI80, 2700k, Ópt.28º. De aluminio color gris oscuroRegulación ON-OFF",
+                "medida": "-",
+                "cantidad_unidades": 2
+              },
+              {
+                "material": "BANDEJA PEMSABAND 400x60mm",
+                "medida": "-",
+                "cantidad_unidades": 69
+              },
+              {
+                "material": "BANDEJA PEMSABAND 300x60mm",
+                "medida": "-",
+                "cantidad_unidades": 67
+              },
+              {
+                "material": "BANDEJA PEMSABAND 200x60mm",
+                "medida": "-",
+                "cantidad_unidades": 359
+              },
+              {
+                "material": "PRUEBAS DE C.G.M.P.+EQUILIBRADO FASES+CONT. TIERRAS+CIRC.EQUIPOT",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "DERIVACIÓN INDIVIDUAL 3(1x25)mm2 Cu",
+                "medida": "-",
+                "cantidad_unidades": 706
+              },
+              {
+                "material": "DERIVACIÓN INDIVIDUAL 3(1x35)mm2 Cu",
+                "medida": "-",
+                "cantidad_unidades": 2228
+              },
+              {
+                "material": "CUADRO DE MANDO Y PROT. VIV CON PROT. CONTRA SOBRETEN. (2 Y 3 D)",
+                "medida": "-",
+                "cantidad_unidades": 36
+              },
+              {
+                "material": "CUADRO DE MANDO Y PROT. VIV CON PROT. CONTRA SOBRETEN. (DUPLEX)",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "LINEA DISTR. CIRCUITO C1",
+                "medida": "Ø 16 mm, 2x1,5+T mm²",
+                "cantidad_unidades": 48
+              },
+              {
+                "material": "LINEA DISTR. CIRCUITO C2",
+                "medida": "Ø 20 mm, 2x2,5+T mm²",
+                "cantidad_unidades": 96
+              },
+              {
+                "material": "LINEA DISTR. CIRCUITO C3",
+                "medida": "Ø 25 mm, 2x6+T mm²",
+                "cantidad_unidades": 48
+              },
+              {
+                "material": "LINEA DISTR. CIRCUITO C4",
+                "medida": "Ø 20 mm, 2x2,5+T mm²",
+                "cantidad_unidades": 96
+              },
+              {
+                "material": "LINEA DISTR. CIRCUITO C5",
+                "medida": "Ø 20 mm, 2x2,5+T mm²",
+                "cantidad_unidades": 48
+              },
+              {
+                "material": "LINEA DISTR. CIRCUITO C6",
+                "medida": "Ø 16 mm, 2x1,5+T mm²",
+                "cantidad_unidades": 12
+              },
+              {
+                "material": "LINEA DISTR. CIRCUITO C7",
+                "medida": "Ø 20 mm, 2x2,5+T mm²",
+                "cantidad_unidades": 24
+              },
+              {
+                "material": "LINEA DISTR. CIRCUITO C9",
+                "medida": "Ø 25 mm, 2x6+T mm²",
+                "cantidad_unidades": 48
+              },
+              {
+                "material": "LINEA DISTR. CIRCUITO C10",
+                "medida": "Ø 20 mm, 2x2,5+T mm²",
+                "cantidad_unidades": 48
+              },
+              {
+                "material": "LINEA DISTR. CIRCUITO C11 DOMOTICA",
+                "medida": "Ø 20 mm, 2x2,5+T mm²",
+                "cantidad_unidades": 48
+              },
+              {
+                "material": "LINEA DISTR. CIRCUITO C12",
+                "medida": "Ø 20 mm, 2x2,5+T mm²",
+                "cantidad_unidades": 48
+              },
+              {
+                "material": "LINEA DISTR. CIRCUITO DE VENTILADOR",
+                "medida": "Ø 20 mm, 2x2,5+T mm²",
+                "cantidad_unidades": 48
+              },
+              {
+                "material": "RED EQUIPOTENCIAL VIVIENDA",
+                "medida": "-",
+                "cantidad_unidades": 156
+              },
+              {
+                "material": "PUNTO DE LUZ SENCILLO MANDANDO SOBRE UNA LUMINARIA",
+                "medida": "-",
+                "cantidad_unidades": 327
+              },
+              {
+                "material": "PUNTO DE LUZ SENCILLO MANDANDO SOBRE DOS LUMINARIAS",
+                "medida": "-",
+                "cantidad_unidades": 60
+              },
+              {
+                "material": "PUNTO DE LUZ CONMUTADO MANDANDO SOBRE UNA LUMINARIA",
+                "medida": "-",
+                "cantidad_unidades": 180
+              },
+              {
+                "material": "PUNTO DE LUZ CONMUTADO MANDANDO SOBRE DOS LUMINARIAS",
+                "medida": "-",
+                "cantidad_unidades": 84
+              },
+              {
+                "material": "PUNTO DE LUZ CONMUTADO MANDANDO SOBRE TRES LUMINARIAS",
+                "medida": "-",
+                "cantidad_unidades": 72
+              },
+              {
+                "material": "PUNTO DE LUZ CONMUTADO MANDANDO SOBRE CUATRO LUMINARIAS",
+                "medida": "-",
+                "cantidad_unidades": 12
+              },
+              {
+                "material": "PUNTO DE LUZ DE CRUZAMIENTO MANDANDO SOBRE UNA LUMINARIA",
+                "medida": "-",
+                "cantidad_unidades": 93
+              },
+              {
+                "material": "PUNTO DE LUZ DOBLE MANDANDO SOBRE UNA LUMINARIA",
+                "medida": "-",
+                "cantidad_unidades": 48
+              },
+              {
+                "material": "PUNTO DE LUZ DOBLE MANDANDO UNO SOBRE DOS Y UNA LUMINARIA",
+                "medida": "-",
+                "cantidad_unidades": 108
+              },
+              {
+                "material": "PUNTO DE LUZ CONMUTADO MANDANDO SOBRE DOS TOMAS DE USOS VARIOS",
+                "medida": "-",
+                "cantidad_unidades": 48
+              },
+              {
+                "material": "DOBLE PULSADOR PARA SUBIDA Y BAJADA DE PERSIANAS",
+                "medida": "-",
+                "cantidad_unidades": 381
+              },
+              {
+                "material": "TOMA DE USOS VARIOS GENERALES 16 A.",
+                "medida": "-",
+                "cantidad_unidades": 1521
+              },
+              {
+                "material": "TOMA DE USOS VARIOS GENERALES 16 A CON 2 USB",
+                "medida": "-",
+                "cantidad_unidades": 234
+              },
+              {
+                "material": "TOMA DE USOS VARIOS ESTANCA 16 A.",
+                "medida": "-",
+                "cantidad_unidades": 108
+              },
+              {
+                "material": "TOMA DE USOS VARIOS PARA LAVAV/FRIG/CAMPANA/LAVAD/MICROONDAS",
+                "medida": "-",
+                "cantidad_unidades": 240
+              },
+              {
+                "material": "TOMA DE USOS VARIOS PARA COCINA-HORNO",
+                "medida": "-",
+                "cantidad_unidades": 96
+              },
+              {
+                "material": "PUNTO PULSADOR TIMBRE",
+                "medida": "-",
+                "cantidad_unidades": 48
+              },
+              {
+                "material": "APLIQUE PARED EXTERIOR UP&DOWN 6W IP66",
+                "medida": "6w, 500 lm, IP66, CRI80, 2700k,Ópt.60º. De aluminio color gris antracita",
+                "cantidad_unidades": 326
+              },
+              {
+                "material": "LUMINARIA EMPOTRAR 12W",
+                "medida": "12w, 1145 lm, IP20, CRI90, 3000k, Ópt.60º. De aluminio color blanco. Regulación ON-OFF",
+                "cantidad_unidades": 156
+              },
+              {
+                "material": "LUMINARIA EMPOTRAR MODULO LED 6W",
+                "medida": "6w, 630 lm, IP20, CRI90, 3000k, Ópt.48º. De aluminio color blanco retranqueado. Regulación ON-OFF",
+                "cantidad_unidades": 729
+              },
+              {
+                "material": "TIRA LED INTERIOR 9W/LM IP65 CON PERFIL Y DRIVER",
+                "medida": "9w/m, 920lm/m, IP65, CRI90, 2700k, Ópt.120º. 120 Puntos/m.",
+                "cantidad_unidades": 363
+              },
+              {
+                "material": "TIRA LED EXTERIOR 9W/LM IP65 CON PERFIL Y DRIVER",
+                "medida": "9w/m, 920lm/m, IP65, CRI90, 2700k, Ópt.120º. 120 Puntos/m.",
+                "cantidad_unidades": 330
+              },
+              {
+                "material": "PICA TOMA DE TIERRA 2,5 m C/TAPA REGISTRO",
+                "medida": "Pica cobrizada de D=14,3 mm. y 2 m. de longitud",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CONDUCTOR UNIPOLAR DE COBRE 35 mm2",
+                "medida": "Conductor de cobre desnudo de 35 mm2",
+                "cantidad_unidades": 14
+              },
+              {
+                "material": "SOLDADURA ALUMINOTÉRMICA",
+                "medida": "Punto de soldadura aluminotérmica para red de tierras",
+                "cantidad_unidades": 987
+              },
+              {
+                "material": "ARQUETA CON TOMA DE TIERRA REGLAMENTARIA",
+                "medida": "Incluida arqueta de 51x51 cm, pica de acero cobrizado de l= 2m. y D=14,6 mm.",
+                "cantidad_unidades": 280
+              },
+              {
+                "material": "PROYECTO TÉCNICO Y BOLETÍN.",
+                "medida": "Proyecto, Boletín y entrega de documentación",
+                "cantidad_unidades": 10
+              },
+              {
+                "material": "GetFace IP - Unidad básica con cámara",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "GetFace IP - Módulo de teclado",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "GetFace IP - Panel de información",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "GetFace IP - Instalación empotrada - Marco - 3 módulos (se instala con ZVP-FBOX3)",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "GetFace IP - Instalación empotrada - Caja - 3 módulos (se instala con ZVP-FFRA3)",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "GetFace IP - Cerradura eléctrica 12V/280mA DC",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "GetFace IP - Fuente de alimentación 12VDC (out) 2A/ 110-230VAC (in)",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "GetFace IP - Firewall + Switch para hasta 8 apartamentos",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "3xGetFace IP - Switch 8 Ports (hasta 60 viviendas)",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "3xGetFace IP - Switch 16 puertos",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "48xGetFace IP - Router de Seguridad para edificio de viviendas con red Zennio",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "KUPSupply 160mA. Fuente de alimentación universal KNX 160mA con 29VDC auxiliar",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "Z50 - Pantalla táctil capacitiva de 5\" - Blanco",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "Z50-Z70-Z100. Intercom License - Integración con el sistema de video portero Zennio Getface IP",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "GetFace IP - Router de Seguridad para edificio de viviendas con red Zennio",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "GetFace IP - ZenCom App License - 1 por vivienda. Recepción de llamada desde Zennio Getface IP (Válida por 5 años)",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "Documentación y programación básica de proyecto de vídeo portería de edificios de vivienda con 1 unidad GetFace IP y hasta 7 apt",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "5xProgramación adicional de hasta 10 apartamentos más respecto 8500024 (se requiere 8500024)",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "Programación adicional de hasta 3 unidades GetFace IP más respecto 8500024 (se requiere 8500024)",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "Partida completa de luminarias de emergencias de la marca OLIVA. Se incluye instalación y parte proporcional de elementos de sujección, conexión y montaje, tales como cableado, abrazaderas y resto de elementos. Se incluyen las siguientes luminarias de emergencias:",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "XXX EMERGENCIAS",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "XXX -EM1 097OLV00020120CAEVEM-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "ZZZ Luminaria de emergecia; no permanente, Ópt. EVACUACION, IP20. De aluminio color blanco. CON AUTOTEST",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "XXX -EM2 097OLV00020120CAAPEM-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "ZZZ Luminaria de emergecia, no permanente, Ópt. De ANTIPÁNICO, IP20. De aluminio color blanco. CON AUTOTEST",
+                "medida": "-",
+                "cantidad_unidades": 18
+              },
+              {
+                "material": "XXX -EM3 097OLV00100166CAAPSP-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "ZZZ Luminaria de emergecia estanca, no permanente, Ópt. De ANTIPÁNICO, IP66. De policarbonato color blanco. CON AUTOTEST",
+                "medida": "-",
+                "cantidad_unidades": 71
+              },
+              {
+                "material": "ZZZ CAJA Estanca",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "XXX -EM4 097OLV00110166CAAPEM-",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "ZZZ Luminaria de emergecia con marco de empotrar, no permanente, Ópt. De ANTIPÁNICO, IP66. De policarbonato color blanco. CON AUTOTEST",
+                "medida": "-",
+                "cantidad_unidades": 29
+              },
+              {
+                "material": "ZZZ CAJA",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "EQUIPAMIENTO RECINTO INFERIOR (RITI)",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CUADRO PROTECCIÓN PARA RITI",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "EQUIPAMIENTO RECINTO SUPERIOR (RITS)",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CUADRO PROTECCIÓN PARA RITS",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "COMPROBACIONES Y PROTOCOLO DE PRUEBAS",
+                "medida": "-",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "Punto Derivación 4 vías, TELEVÉS 417",
+                "medida": "Derivador de 4 salidas, 17 dB de atenuación para TV terrestre y 17,5 dB para FI",
+                "cantidad_unidades": 6
+              },
+              {
+                "material": "Punto Derivación 4 vías, TELEVÉS 420",
+                "medida": "Derivador de 4 salidas, 20,5 dB de atenuación para TV terrestre y 20 dB para FI",
+                "cantidad_unidades": 2
+              },
+              {
+                "material": "Punto Distribución 2 vías, TELEVÉS 519502",
+                "medida": "Distribuidor de 2 salidas, 5 dB de atenuación para TV terrestre y 4 dB para FI",
+                "cantidad_unidades": 8
+              },
+              {
+                "material": "Punto PAU+Distribución de 2 vías, TELEVÉS 519532",
+                "medida": "PAU+distribuidor de 2 salidas, 5-2.400 MHz, 5,0 dB de atenuación para TV terrestre y 4,0 dB para FI",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "Punto PAU+Distribución de 3 vías, TELEVÉS 519533",
+                "medida": "PAU+distribuidor de 3 salidas, 5-2.400 MHz, 8,0 dB de atenuación para TV terrestre y 7,0 dB para FI",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "Punto PAU+Distribución de 6 vías, TELEVÉS 519536",
+                "medida": "PAU+distribuidor de 6 salidas, 5-2.400 MHz, 12 dB de atenuación para TV terrestre y 11 dB para FI",
+                "cantidad_unidades": 16
+              },
+              {
+                "material": "Punto PAU+Distribución de 8 vías, TELEVÉS 5433",
+                "medida": "PAU+distribuidor de 8 salidas, 5-2.400 MHz, 14 dB de atenuación para TV terrestre y 16 dB para FI",
+                "cantidad_unidades": 32
+              },
+              {
+                "material": "Cableado 4 pares UTP Cat. 6 LSFH Dca TELEVÉS 2123",
+                "medida": "Cable 4 pares UTP Cat. 6, cubierta libre de halógenos",
+                "cantidad_unidades": 7523
+              },
+              {
+                "material": "Cableado Multifibra 2 F.O. Monomodo LSFH Dca TELEVÉS 231901",
+                "medida": "Cable de 2 F.O. Rojo-Verde monomodo 9/125 G.657 A2",
+                "cantidad_unidades": 1321
+              },
+              {
+                "material": "Punto Interconexión Fibra Óptica Armario Rack 19\" 24Ux60x60",
+                "medida": "Armario VDI cerrado 24U 600(A)x600(F) mm",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "Pto. Distrib. Fibra óptica (8 fibras) TELEVÉS 231301",
+                "medida": "Caja de segregación de hasta 8 fibras ópticas",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "PAU Pares Trenzados MUX 1 entrada 8+1 salidas TELEVÉS 546501",
+                "medida": "Multiplexor pasivo de 1 entrada y 8 salidas RJ-45",
+                "cantidad_unidades": 14
+              },
+              {
+                "material": "PAU Cables de Fibra Óptica 2 adaptadores SC (h) TELEVÉS 2315",
+                "medida": "Roseta de fibra óptica con 2 adaptadores hembra SC",
+                "cantidad_unidades": 50
+              },
+              {
+                "material": "ARQUETA ENTRADA 60x60x80 PREFABRICADA TAPA \"ICT\"",
+                "medida": "Arqueta de entrada prefabricada de hormigón de dimensiones interiores 60x60x80 cm.",
+                "cantidad_unidades": 48
+              },
+              {
+                "material": "ARQUETA DE PASO 40x40x460 PREFABRICADA TAPA \"ICT\"",
+                "medida": "Arqueta de entrada prefabricada de hormigón de dimensiones interiores 40x40x40 cm.",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CANALIZACIÓN EXTERNA ENTERRADA PVC 6 Ø 63",
+                "medida": "Canalización externa en zanja bajo acera de 45x93 cm. para 6 conductos, en base 4, de PVC de 63 mm. de diámetro",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "CANALIZACIÓN ENLACE INFERIOR - TUBO PLÁSTICO 6 Ø 50",
+                "medida": "Canalización de enlace inferior, formada por 6 tubos de material plástico de Ø 50 mm",
+                "cantidad_unidades": 21
+              },
+              {
+                "material": "CANALIZACIÓN PRINCIPAL - BANDEJA PVC 60 x 200 mm",
+                "medida": "Canalización Principal Horizontal, formada por bandeja de PVC-M1 de 60 x 200 mm, perforada",
+                "cantidad_unidades": 27
+              },
+              {
+                "material": "CANALIZACIÓN PRINCIPAL - TUBO PLÁSTICO Ø 50",
+                "medida": "Canalización principal, formada por tubos de material plástico de Ø 50 mm",
+                "cantidad_unidades": 60
+              },
+              {
+                "material": "CANALIZACIÓN SECUNDARIA ACCESO EMP. PVC 3 Ø 25",
+                "medida": "Canalización secundaria en montaje empotrado, formada por 3 tubos de PVC corrugado forrado de Ø 25 mm",
+                "cantidad_unidades": 570
+              },
+              {
+                "material": "CANALIZACIÓN SECUNDARIA ACCESO SUP. PVC RÍGIDO 3 Ø 25",
+                "medida": "Canalización secundaria en montaje superficial, formada por 3 tubos de PVC rígido de Ø 25 mm",
+                "cantidad_unidades": 609
+              },
+              {
+                "material": "CANALIZACIÓN LÍNEA ASCENSOR PVC Ø 25",
+                "medida": "Canalización empotrada para acometida de ascensores, formada por 1 tubo de PVC corrugado forrado de Ø 25 mm",
+                "cantidad_unidades": 117
+              },
+              {
+                "material": "CANALIZACIÓN INTERIOR PVC Ø 20",
+                "medida": "Canalización empotrada para interior de usuario, formada por 1 tubo de PVC corrugado forrado de Ø 20 mm",
+                "cantidad_unidades": 30
+              },
+              {
+                "material": "REGISTRO ENLACE INFERIOR ARMARIO",
+                "medida": "45x45x12 cm, acero galvanizado, IP 33, IK7",
+                "cantidad_unidades": 14
+              },
+              {
+                "material": "REGISTRO SECUNDARIO 45x45x15 CON PUERTA EI2 60",
+                "medida": "45x45x15 cm, con puerta resistente al fuego EI2 60",
+                "cantidad_unidades": 2
+              },
+              {
+                "material": "REGISTRO SECUNDARIO AMPLIFICACIÓN 45x45x15 CON PUERTA EI2 60",
+                "medida": "45x45x15 cm, con puerta resistente al fuego EI2 60",
+                "cantidad_unidades": 14
+              },
+              {
+                "material": "REGISTRO SECUNDARIO ARMARIO 45x45x15",
+                "medida": "45x45x15 cm, armario metálico, IP 33, IK7",
+                "cantidad_unidades": 3
+              },
+              {
+                "material": "REGISTRO SECUNDARIO ARMARIO 50x70x15",
+                "medida": "50x70x15 cm, armario metálico, IP 33, IK7",
+                "cantidad_unidades": 5
+              },
+              {
+                "material": "REGISTRO PASO 13x18x8 cm",
+                "medida": "13x18x8 cm, grado de protección IP 66, IK 5",
+                "cantidad_unidades": 1
+              },
+              {
+                "material": "REGISTRO PASO TIPO \"MINIPAU\" 20x30x6 cm",
+                "medida": "20x30x6 cm, grado de protección IP 33, IK 5",
+                "cantidad_unidades": 7
+              },
+              {
+                "material": "REGISTRO PASO TIPO C 10x16x4 cm",
+                "medida": "10x16x4 cm, grado de protección IP 55, IK 10",
+                "cantidad_unidades": 42
+              },
+              {
+                "material": "REGISTRO TERMINACIÓN DE RED 50x60x8 cm",
+                "medida": "50x60x8 cm, armario metálico, IP 33, IK 5",
+                "cantidad_unidades": 3
+              },
+              {
+                "material": "REGISTRO DE TOMA CONFIGURABLE/COAX 64x64x42 cm",
+                "medida": "64x64x42 cm, grado de protección IP 33, IK 5",
+                "cantidad_unidades": 50
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "información estructurada": [
+      {
+        "json": {
+          "material": "CANALIZACION ENTUBADA ENTERRADA",
+          "medida": "Ø 160 mm",
+          "cantidad_unidades": 26
+        }
+      },
+      {
+        "json": {
+          "material": "LINEA BT 3X240+1X150",
+          "medida": "3x240 + 1x150 mm² AI",
+          "cantidad_unidades": 225
+        }
+      },
+      {
+        "json": {
+          "material": "TERMINALES BT CGP",
+          "medida": "-",
+          "cantidad_unidades": 5
+        }
+      },
+      {
+        "json": {
+          "material": "TERMINALES BT CBT",
+          "medida": "-",
+          "cantidad_unidades": 5
+        }
+      },
+      {
+        "json": {
+          "material": "TRAMITACION LICENCIA AYUNTAMIENTO",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "REALIZACIÓN DE ENSAYOS",
+          "medida": "-",
+          "cantidad_unidades": 5
+        }
+      },
+      {
+        "json": {
+          "material": "PROYECTO BT",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "PLANO CARTOGRÁFICO",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "TRAMITACIÓN CON LA COMPAÑIA ELECTRICA Y PAGO DERECHOS DE ENGANCH",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CENTRO DE TRANSFORMACIÓN 400 KVAS",
+          "medida": "400 kVA, edificio prefabricado, 20 kV, 420 V",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "PREVISION ACOMETIDA CGP (4x240) MM2 DE ALUMINIO ENTERRADA",
+          "medida": "4x240 mm², 1x150 mm², Ø 160 mm",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CAJA GENERAL DE PROTECCIÓN DE 250A",
+          "medida": "250 A",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CAJA GENERAL DE PROTECCIÓN Y MEDIDA 160A",
+          "medida": "160 A",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CENTRALIZACION DE CONTADORES PORTAL 1 + 16 VIVIENDAS PORTAL 1",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CENTRALIZACION DE CONTADORES PORTAL 2 + 16 VIVIENDAS PORTAL 2",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CENTRALIZACION DE CONTADORES PORTAL 3 + 16 VIVIENDAS PORTAL 3",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CENTRALIZACION DE CONTADORES SÓTANO + ZONAS COMUNES + REC. VEHIC",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CENTRALIZACION DE CONTADORES CLIMATIZACIÓN",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CENTRALIZACION DE CONTADORES LÍNEA DE SOCORRO",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "LGA (4x70) MM2 DE COBRE INCLUSO BANDEJA CIEGA Y TUBO ENTERRADO",
+          "medida": "5x35 mm², 0,6/1 kV",
+          "cantidad_unidades": 70
+        }
+      },
+      {
+        "json": {
+          "material": "LGA (4x150) MM2 DE COBRE INCLUSO BANDEJA CIEGA Y TUBO ENTERRADO",
+          "medida": "5x150 mm², 0,6/1 kV",
+          "cantidad_unidades": 62
+        }
+      },
+      {
+        "json": {
+          "material": "LGA (4x185) MM2 DE COBRE INCLUSO BANDEJA CIEGA Y TUBO ENTERRADO",
+          "medida": "5x185 mm², 0,6/1 kV",
+          "cantidad_unidades": 181
+        }
+      },
+      {
+        "json": {
+          "material": "LGA (4x240) MM2 DE COBRE INCLUSO BANDEJA CIEGA Y TUBO ENTERRADO",
+          "medida": "5x240 mm², 0,6/1 kV",
+          "cantidad_unidades": 61
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO DE RED/GRUPO",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "DERIVACIÓN INDIVIDUAL A CUADRO PRINCIPAL 5x16 mm2. Cu",
+          "medida": "5x16 mm²",
+          "cantidad_unidades": 179
+        }
+      },
+      {
+        "json": {
+          "material": "DERIVACIÓN INDIVIDUAL A CUADRO PRINCIPAL 5x35 mm2. Cu",
+          "medida": "5x35 mm²",
+          "cantidad_unidades": 49
+        }
+      },
+      {
+        "json": {
+          "material": "DERIVACIÓN INDIVIDUAL A CUADRO PRINCIPAL 5x50 mm2. Cu",
+          "medida": "5x50 mm²",
+          "cantidad_unidades": 48
+        }
+      },
+      {
+        "json": {
+          "material": "DERIVACIÓN INDIVIDUAL A CUADRO PRINCIPAL 5x95 mm2. Cu",
+          "medida": "5x95 mm²",
+          "cantidad_unidades": 60
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEA RZ1 A CUADRO SECUNDARIO 5x6 mm2. Cu",
+          "medida": "5x6 mm²",
+          "cantidad_unidades": 812
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEA RZ1 A CUADRO SECUNDARIO 3x6 mm2. Cu",
+          "medida": "3x6 mm²",
+          "cantidad_unidades": 139
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEA RZ1 A CUADRO SECUNDARIO 5x35 mm2. Cu",
+          "medida": "5x35 mm²",
+          "cantidad_unidades": 76
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEA RZ1 A CUADRO SECUNDARIO 5x95 mm2. Cu",
+          "medida": "5x95 mm²",
+          "cantidad_unidades": 47
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEA DE CONMUTACIÓN SEGURFOC 5x6 mm2. Cu",
+          "medida": "5x6 mm²",
+          "cantidad_unidades": 48
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEA DE CONMUTACIÓN SEGURFOC 5x10 mm2. Cu",
+          "medida": "5x10 mm²",
+          "cantidad_unidades": 45
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEA DE CONMUTACIÓN SEGURFOC 5x16 mm2. Cu",
+          "medida": "5x16 mm²",
+          "cantidad_unidades": 52
+        }
+      },
+      {
+        "json": {
+          "material": "DISTRIBUCIÓN SERVICIOS COMUNES Y LINEAS DESDE CUADROS",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO GENERAL DE SÓTANO CON CONMUNTACION RED/GRUPO",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO GENERAL DE ZONAS COMUNES",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO GENERAL DE PORTAL 1 CON CONMUNTACION RED/GRUPO",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO GENERAL DE PORTAL 2",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO GENERAL DE PORTAL 3",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO GENERAL DE CLIMATIZACION Y ACS",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO SECUNDARIO DE SOTANO 2 CON CONMUNTACION RED/GRUPO",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO SECUNDARIO DE EXTRACCIÓN PS1 NA",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO SECUNDARIO DE EXTRACCIÓN PS1 NB",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO SECUNDARIO DE EXTRACCIÓN PS2 NA",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO SECUNDARIO DE EXTRACCIÓN PS2 NB",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO SECUNDARIO DE EXTRACCIÓN PS2 NC",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO SECUNDARIO DE PCI",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO SECUNDARIO DE RITI",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO SECUNDARIO DE RITS",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO SECUNDARIO DE PISCINA",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE FONTANERÍA",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE CONSERJERÍA",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE CLUB SOCIAL",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE GIMNASIO",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE TRASTERO 1 PS1",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE TRASTERO 2 PS1",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE TRASTERO 2 PS2",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO DE TRASTERO 3 PS2",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADRO SECUNDARIO CLIMATIZACIÓN/ACS",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEAS DE DISTRIBUCIÓN DESDE CUADROS SECUNDARIOS DE ASCENSORES",
+          "medida": "-",
+          "cantidad_unidades": 3
+        }
+      },
+      {
+        "json": {
+          "material": "CABLEADO DE TODOS LOS PUNTOS DE LUZ",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "DETECTOR DE PRESENCIA",
+          "medida": "2x16 A+T",
+          "cantidad_unidades": 86
+        }
+      },
+      {
+        "json": {
+          "material": "PUNTOS DE LUZ Y LAMP. EN HUECO ASCENSOR",
+          "medida": "-",
+          "cantidad_unidades": 3
+        }
+      },
+      {
+        "json": {
+          "material": "PULSADOR DE SUPERFICIE TEMPORIZADO",
+          "medida": "-",
+          "cantidad_unidades": 21
+        }
+      },
+      {
+        "json": {
+          "material": "PULSADOR DE EMPOTRADO TEMPORIZADO",
+          "medida": "-",
+          "cantidad_unidades": 15
+        }
+      },
+      {
+        "json": {
+          "material": "INTERRUPTOR DE LUZ SENCILLO ESTANCO C/CASQUILLO Y BOMBILLA",
+          "medida": "-",
+          "cantidad_unidades": 30
+        }
+      },
+      {
+        "json": {
+          "material": "INTERRUPTOR DE LUZ SENCILLO C/CASQUILLO Y BOMBILLA",
+          "medida": "-",
+          "cantidad_unidades": 18
+        }
+      },
+      {
+        "json": {
+          "material": "INTERRUPTOR SENCILLO",
+          "medida": "-",
+          "cantidad_unidades": 20
+        }
+      },
+      {
+        "json": {
+          "material": "INTERRUPTOR SENCILLO ESTANCO",
+          "medida": "-",
+          "cantidad_unidades": 20
+        }
+      },
+      {
+        "json": {
+          "material": "TOMA DE USOS VARIOS DE 16A.",
+          "medida": "-",
+          "cantidad_unidades": 39
+        }
+      },
+      {
+        "json": {
+          "material": "TOMA DE USOS VARIOS ESTANCA",
+          "medida": "-",
+          "cantidad_unidades": 43
+        }
+      },
+      {
+        "json": {
+          "material": "CAJA SUELO 4 UV Y 2 DATOS",
+          "medida": "-",
+          "cantidad_unidades": 2
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEA PARA PUERTA AUTOMÁTICA DE GARAJE",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "R.T.R. (REGISTRO TERMINACIÓN DE RED)",
+          "medida": "500x600x80 cm",
+          "cantidad_unidades": 3
+        }
+      },
+      {
+        "json": {
+          "material": "LUMINARIAS ZONAS COMUNES OLIVA",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "PP_P088-24_ZONAS COMUNES_BOADILLA",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "-LT01 321OLM10082027120-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "S1427M1140 Línea LED 14,4W/M, 1730Lm/m, IP20, CRI90, 2700ºK Opt.120º. 182 LED/m (Rollo 5m)",
+          "medida": "-",
+          "cantidad_unidades": 17
+        }
+      },
+      {
+        "json": {
+          "material": "12 LAMPARAS LED",
+          "medida": "-",
+          "cantidad_unidades": 17
+        }
+      },
+      {
+        "json": {
+          "material": "-LT02 321OLM10122027120-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "S1427M1140 Línea LED 19,2W/M, 2300Lm/m, IP20, CRI90, 2700ºK Opt.120º. 240 LED/m (Rollo 5m)",
+          "medida": "-",
+          "cantidad_unidades": 6
+        }
+      },
+      {
+        "json": {
+          "material": "12 LAMPARAS LED",
+          "medida": "-",
+          "cantidad_unidades": 6
+        }
+      },
+      {
+        "json": {
+          "material": "-P-LT01 + P-LT02 + P-LR01 474OLV200603EM-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "Perfil de empotrar retranqueado largo 1m, De aluminio color gris",
+          "medida": "-",
+          "cantidad_unidades": 93
+        }
+      },
+      {
+        "json": {
+          "material": "Difusor Opal",
+          "medida": "-",
+          "cantidad_unidades": 93
+        }
+      },
+      {
+        "json": {
+          "material": "Set de 2 tapas",
+          "medida": "-",
+          "cantidad_unidades": 36
+        }
+      },
+      {
+        "json": {
+          "material": "Conector Lineal",
+          "medida": "-",
+          "cantidad_unidades": 27
+        }
+      },
+      {
+        "json": {
+          "material": "Clip montaje",
+          "medida": "-",
+          "cantidad_unidades": 345
+        }
+      },
+      {
+        "json": {
+          "material": "-LG01 + LV01 + LG03 + LR01 321OLM10066727120-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "S962761140 Línea LED 9,6W/M, 1040Lm/m, IP67, CRI90, 2700ºK Opt.120º. 120 LED/m (Rollo 5m)",
+          "medida": "-",
+          "cantidad_unidades": 40
+        }
+      },
+      {
+        "json": {
+          "material": "-LG02 321OLM10116727120-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "S142761140 Línea LED 14,4W/M, 1730Lm/m, IP67, CRI90, 2700ºK Opt.120º. 182 LED/m (Rollo 5m)",
+          "medida": "-",
+          "cantidad_unidades": 28
+        }
+      },
+      {
+        "json": {
+          "material": "12 LAMPARAS LED",
+          "medida": "-",
+          "cantidad_unidades": 28
+        }
+      },
+      {
+        "json": {
+          "material": "-P-LG01 P-LV01 P-LG02 P-LG03 474OLV201203SP-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "Perfil de superficie LARGO 1M De aluminio color gris",
+          "medida": "-",
+          "cantidad_unidades": 255
+        }
+      },
+      {
+        "json": {
+          "material": "Difusor BLANCO",
+          "medida": "-",
+          "cantidad_unidades": 255
+        }
+      },
+      {
+        "json": {
+          "material": "Kit tapas",
+          "medida": "-",
+          "cantidad_unidades": 102
+        }
+      },
+      {
+        "json": {
+          "material": "SUJECION METÁLICA",
+          "medida": "-",
+          "cantidad_unidades": 377
+        }
+      },
+      {
+        "json": {
+          "material": "MANIPULADO LUMINARIA SIMPLE",
+          "medida": "-",
+          "cantidad_unidades": 65
+        }
+      },
+      {
+        "json": {
+          "material": "cable sección redonda negro PVC",
+          "medida": "-",
+          "cantidad_unidades": 75
+        }
+      },
+      {
+        "json": {
+          "material": "-LE01 321OLM10052027120-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "S962721140 Línea LED 9,6W/M, 840Lm/m, IP20, CRI90, 2700ºK Opt.120º. 120 LED/m (Rollo 5m)",
+          "medida": "-",
+          "cantidad_unidades": 15
+        }
+      },
+      {
+        "json": {
+          "material": "-P-LE01 321OLM200203SP-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "Perfil de superficie UNIDAD DE 2M, De aluminio color gris",
+          "medida": "-",
+          "cantidad_unidades": 13
+        }
+      },
+      {
+        "json": {
+          "material": "Difusor Opal",
+          "medida": "-",
+          "cantidad_unidades": 13
+        }
+      },
+      {
+        "json": {
+          "material": "Tapa final hueco",
+          "medida": "-",
+          "cantidad_unidades": 2
+        }
+      },
+      {
+        "json": {
+          "material": "Tapa final",
+          "medida": "-",
+          "cantidad_unidades": 2
+        }
+      },
+      {
+        "json": {
+          "material": "Clip Montaje",
+          "medida": "-",
+          "cantidad_unidades": 15
+        }
+      },
+      {
+        "json": {
+          "material": "-LM01 321OLM10052027120 + LM02 321OLM10052027120-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "S962721140 Línea LED 9,6W/M, 840Lm/m, IP20, CRI90, 2700ºK Opt.120º. 120 LED/m (Rollo 5m)",
+          "medida": "-",
+          "cantidad_unidades": 3
+        }
+      },
+      {
+        "json": {
+          "material": "-P-LM01 P-LM02 321OLM200303EM-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "Perfil de empotrar UNIDAD DE 2M, De aluminio color gris",
+          "medida": "-",
+          "cantidad_unidades": 8
+        }
+      },
+      {
+        "json": {
+          "material": "Difusor Opal",
+          "medida": "-",
+          "cantidad_unidades": 8
+        }
+      },
+      {
+        "json": {
+          "material": "TAPA FINAL HUECO",
+          "medida": "-",
+          "cantidad_unidades": 4
+        }
+      },
+      {
+        "json": {
+          "material": "TAPA FINAL",
+          "medida": "-",
+          "cantidad_unidades": 4
+        }
+      },
+      {
+        "json": {
+          "material": "CLIP DE MONTAJE",
+          "medida": "-",
+          "cantidad_unidades": 45
+        }
+      },
+      {
+        "json": {
+          "material": "-D 60w F IP20 321OLM30046020F-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "MD26000620 Driver Remoto 60w, IP20, 24V. (Oculto en Registro) Dim. (180x52x30 mm ) Regulación ON-OFF",
+          "medida": "-",
+          "cantidad_unidades": 29
+        }
+      },
+      {
+        "json": {
+          "material": "-D 75w F IP20 321 MTL 3005 75 20 F-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "MD27500320 Driver remoto 75w IP20 24V (Oculto en Registro)Dimensiones (180x52x33 ) Regulación ON-OFF",
+          "medida": "-",
+          "cantidad_unidades": 51
+        }
+      },
+      {
+        "json": {
+          "material": "-D 90w F IP20 321 MTL 3006 90 20 F-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "MD27900620 Driver remoto 90w IP20 24V (Oculto en Registro)Dimensiones (190x65x22 ) Regulación ON-OFF",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "-D 120wF IP20 321 MTL 3008 120 20 F-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "MD28000620 Driver remoto 120w IP20 24V (Oculto en Registro)Dimensiones (300x40x30 ) Regulación ON-OFF",
+          "medida": "-",
+          "cantidad_unidades": 2
+        }
+      },
+      {
+        "json": {
+          "material": "-D 30w F IP67 321 MTL 3019 30 67 F-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "MD29000320 Driver remoto 30w IP67 24V (Oculto en Registro)Dimensiones (131x42x34 ) Regulación ON-OFF",
+          "medida": "-",
+          "cantidad_unidades": 43
+        }
+      },
+      {
+        "json": {
+          "material": "-L01 260OLV400901652724F-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "ZZZ Empotrado Circular fijo 3w, 136lm, IP65, CRI90, 2700k, Ópt.24º. De aluminio color blanco. Regulación ON-OFF",
+          "medida": "-",
+          "cantidad_unidades": 100
+        }
+      },
+      {
+        "json": {
+          "material": "-L02 260OLV401001652730F-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "ZZZ Empotrado Circular fijo 5w, 240lm, IP65, CRI90, 2700k, Ópt.30º. De aluminio color blanco Regulación ON-OFF",
+          "medida": "-",
+          "cantidad_unidades": 57
+        }
+      },
+      {
+        "json": {
+          "material": "-L03 273OLV903001662700F-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "ZZZ Plafond de superficie Circular fijo 25w, 1842lm, IP66, CRI90, 2700k, Ópt.00º. De policarbonato color blanco Regulación ON-OFF",
+          "medida": "-",
+          "cantidad_unidades": 42
+        }
+      },
+      {
+        "json": {
+          "material": "-L05 163OLV7009036540140F-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "ZZZ Pantalla estanca de superficie 36w, 13396lm, IP65, CRI80, 4000k, Ópt.140º. De policarbonato color Gris difusor opal.Regulación ON-OFF",
+          "medida": "-",
+          "cantidad_unidades": 36
+        }
+      },
+      {
+        "json": {
+          "material": "-L06 163OLV403101444070F-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "ZZZ Empotrado Circular fijo 12w, 1225lm, IP44, CRI90, 2700k, Ópt.70º. De aluminio color blanco Regulación ON-OFF",
+          "medida": "-",
+          "cantidad_unidades": 53
+        }
+      },
+      {
+        "json": {
+          "material": "PROYECTOR DE EXTERIOR ORIENTABLE",
+          "medida": "8w, 430 lm, IP65, CRI80, 3000k, Ópt.28º. De aluminio color negro. Regulación ON-OFF",
+          "cantidad_unidades": 5
+        }
+      },
+      {
+        "json": {
+          "material": "LUMINARIAS ZONAS EXTERIORES OLIVA",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "EMPOTRADO MODULO LED",
+          "medida": "6w, 630 lm, IP20, CRI90, 2700k, Ópt.48º. De aluminio color blanco+negro retranqueado. Regulación ON-OFF",
+          "cantidad_unidades": 3
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEA LED",
+          "medida": "9,6 w/m, 1040 lm/m, IP67, CRI90, 3000k, Ópt.120º. 120 Puntos/m (rollo 5m)",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "PERFIL DE EMPOTRAR RETRANQUEADO",
+          "medida": "Largo 1m, De aluminio color gris",
+          "cantidad_unidades": 3
+        }
+      },
+      {
+        "json": {
+          "material": "SILICONA LED",
+          "medida": "24V, 7w/m, 410Lm/M, IP65, CRI90, 3000k, Ópt.120º.",
+          "cantidad_unidades": 133
+        }
+      },
+      {
+        "json": {
+          "material": "PERFIL DE SUPERFICIE PARA LED",
+          "medida": "-",
+          "cantidad_unidades": 134
+        }
+      },
+      {
+        "json": {
+          "material": "LÍNEA LED NEON SUMERGIBLE PISCINA",
+          "medida": "8w/m, 545lm/m, IP67, CRI90, 3000k, Ópt.120º. - Puntos/m.(1m)",
+          "cantidad_unidades": 15
+        }
+      },
+      {
+        "json": {
+          "material": "PERFIL DE SUPERFICIE LARGO ALTO",
+          "medida": "1m, De aluminio color gris claro con difusor opal",
+          "cantidad_unidades": 16
+        }
+      },
+      {
+        "json": {
+          "material": "DRIVER REMOTO",
+          "medida": "30w IP67 24V (Oculto en Registro)Dimensiones (131x42x34 ) Regulación ON-OFF",
+          "cantidad_unidades": 7
+        }
+      },
+      {
+        "json": {
+          "material": "DRIVER REMOTO",
+          "medida": "60w IP67 24V (Oculto en Registro)Dimensiones (131x42x34mm ) Regulación ON-OFF",
+          "cantidad_unidades": 21
+        }
+      },
+      {
+        "json": {
+          "material": "PROYECTOR ORIENTABLE DE EXTERIOR",
+          "medida": "6w, 650 lm, IP65, CRI90, 3000k,Ópt.30º. De aluminio color gris oscuro luz directa. Regulación ON-OFF",
+          "cantidad_unidades": 19
+        }
+      },
+      {
+        "json": {
+          "material": "BALIZA DE PARED",
+          "medida": "3,5w, 252lm, IP65, CRI80, 3000k, Ópt.ASMº. De aluminio color blanco. Regulación ON-OFF",
+          "cantidad_unidades": 23
+        }
+      },
+      {
+        "json": {
+          "material": "ZZZ Driver 24w 24v",
+          "medida": "-",
+          "cantidad_unidades": 2
+        }
+      },
+      {
+        "json": {
+          "material": "ZZZ Empotrado Circular fijo 3w, 240lm, IP65, CRI90, 2700k, Ópt.30º. De aluminio color negro. Regulación ON-OFF",
+          "medida": "-",
+          "cantidad_unidades": 4
+        }
+      },
+      {
+        "json": {
+          "material": "ZZZ Ecotasa",
+          "medida": "-",
+          "cantidad_unidades": 4
+        }
+      },
+      {
+        "json": {
+          "material": "ZZZ Baliza empotrada sumergible Circular 7w, 463lm, IP68, CRI80, 2700k, Ópt.68º. De aluminio color acero Regulación ON-OFF",
+          "medida": "-",
+          "cantidad_unidades": 5
+        }
+      },
+      {
+        "json": {
+          "material": "ZZZ Farola con 3 proyectores orientables, luz directa, LED 41W, 3712Lm IP66, CRI80, 3000K, Ópt. 45º. De Aluminio color corten.Regulación DALI. ON-OFF",
+          "medida": "-",
+          "cantidad_unidades": 7
+        }
+      },
+      {
+        "json": {
+          "material": "ZZZ Luminaria exterior de superfície 12,5w, 785lm, IP65, CRI80, 2700k, Ópt.28º. De aluminio color gris oscuroRegulación ON-OFF",
+          "medida": "-",
+          "cantidad_unidades": 2
+        }
+      },
+      {
+        "json": {
+          "material": "BANDEJA PEMSABAND 400x60mm",
+          "medida": "-",
+          "cantidad_unidades": 69
+        }
+      },
+      {
+        "json": {
+          "material": "BANDEJA PEMSABAND 300x60mm",
+          "medida": "-",
+          "cantidad_unidades": 67
+        }
+      },
+      {
+        "json": {
+          "material": "BANDEJA PEMSABAND 200x60mm",
+          "medida": "-",
+          "cantidad_unidades": 359
+        }
+      },
+      {
+        "json": {
+          "material": "PRUEBAS DE C.G.M.P.+EQUILIBRADO FASES+CONT. TIERRAS+CIRC.EQUIPOT",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "DERIVACIÓN INDIVIDUAL 3(1x25)mm2 Cu",
+          "medida": "-",
+          "cantidad_unidades": 706
+        }
+      },
+      {
+        "json": {
+          "material": "DERIVACIÓN INDIVIDUAL 3(1x35)mm2 Cu",
+          "medida": "-",
+          "cantidad_unidades": 2228
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO DE MANDO Y PROT. VIV CON PROT. CONTRA SOBRETEN. (2 Y 3 D)",
+          "medida": "-",
+          "cantidad_unidades": 36
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO DE MANDO Y PROT. VIV CON PROT. CONTRA SOBRETEN. (DUPLEX)",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "LINEA DISTR. CIRCUITO C1",
+          "medida": "Ø 16 mm, 2x1,5+T mm²",
+          "cantidad_unidades": 48
+        }
+      },
+      {
+        "json": {
+          "material": "LINEA DISTR. CIRCUITO C2",
+          "medida": "Ø 20 mm, 2x2,5+T mm²",
+          "cantidad_unidades": 96
+        }
+      },
+      {
+        "json": {
+          "material": "LINEA DISTR. CIRCUITO C3",
+          "medida": "Ø 25 mm, 2x6+T mm²",
+          "cantidad_unidades": 48
+        }
+      },
+      {
+        "json": {
+          "material": "LINEA DISTR. CIRCUITO C4",
+          "medida": "Ø 20 mm, 2x2,5+T mm²",
+          "cantidad_unidades": 96
+        }
+      },
+      {
+        "json": {
+          "material": "LINEA DISTR. CIRCUITO C5",
+          "medida": "Ø 20 mm, 2x2,5+T mm²",
+          "cantidad_unidades": 48
+        }
+      },
+      {
+        "json": {
+          "material": "LINEA DISTR. CIRCUITO C6",
+          "medida": "Ø 16 mm, 2x1,5+T mm²",
+          "cantidad_unidades": 12
+        }
+      },
+      {
+        "json": {
+          "material": "LINEA DISTR. CIRCUITO C7",
+          "medida": "Ø 20 mm, 2x2,5+T mm²",
+          "cantidad_unidades": 24
+        }
+      },
+      {
+        "json": {
+          "material": "LINEA DISTR. CIRCUITO C9",
+          "medida": "Ø 25 mm, 2x6+T mm²",
+          "cantidad_unidades": 48
+        }
+      },
+      {
+        "json": {
+          "material": "LINEA DISTR. CIRCUITO C10",
+          "medida": "Ø 20 mm, 2x2,5+T mm²",
+          "cantidad_unidades": 48
+        }
+      },
+      {
+        "json": {
+          "material": "LINEA DISTR. CIRCUITO C11 DOMOTICA",
+          "medida": "Ø 20 mm, 2x2,5+T mm²",
+          "cantidad_unidades": 48
+        }
+      },
+      {
+        "json": {
+          "material": "LINEA DISTR. CIRCUITO C12",
+          "medida": "Ø 20 mm, 2x2,5+T mm²",
+          "cantidad_unidades": 48
+        }
+      },
+      {
+        "json": {
+          "material": "LINEA DISTR. CIRCUITO DE VENTILADOR",
+          "medida": "Ø 20 mm, 2x2,5+T mm²",
+          "cantidad_unidades": 48
+        }
+      },
+      {
+        "json": {
+          "material": "RED EQUIPOTENCIAL VIVIENDA",
+          "medida": "-",
+          "cantidad_unidades": 156
+        }
+      },
+      {
+        "json": {
+          "material": "PUNTO DE LUZ SENCILLO MANDANDO SOBRE UNA LUMINARIA",
+          "medida": "-",
+          "cantidad_unidades": 327
+        }
+      },
+      {
+        "json": {
+          "material": "PUNTO DE LUZ SENCILLO MANDANDO SOBRE DOS LUMINARIAS",
+          "medida": "-",
+          "cantidad_unidades": 60
+        }
+      },
+      {
+        "json": {
+          "material": "PUNTO DE LUZ CONMUTADO MANDANDO SOBRE UNA LUMINARIA",
+          "medida": "-",
+          "cantidad_unidades": 180
+        }
+      },
+      {
+        "json": {
+          "material": "PUNTO DE LUZ CONMUTADO MANDANDO SOBRE DOS LUMINARIAS",
+          "medida": "-",
+          "cantidad_unidades": 84
+        }
+      },
+      {
+        "json": {
+          "material": "PUNTO DE LUZ CONMUTADO MANDANDO SOBRE TRES LUMINARIAS",
+          "medida": "-",
+          "cantidad_unidades": 72
+        }
+      },
+      {
+        "json": {
+          "material": "PUNTO DE LUZ CONMUTADO MANDANDO SOBRE CUATRO LUMINARIAS",
+          "medida": "-",
+          "cantidad_unidades": 12
+        }
+      },
+      {
+        "json": {
+          "material": "PUNTO DE LUZ DE CRUZAMIENTO MANDANDO SOBRE UNA LUMINARIA",
+          "medida": "-",
+          "cantidad_unidades": 93
+        }
+      },
+      {
+        "json": {
+          "material": "PUNTO DE LUZ DOBLE MANDANDO SOBRE UNA LUMINARIA",
+          "medida": "-",
+          "cantidad_unidades": 48
+        }
+      },
+      {
+        "json": {
+          "material": "PUNTO DE LUZ DOBLE MANDANDO UNO SOBRE DOS Y UNA LUMINARIA",
+          "medida": "-",
+          "cantidad_unidades": 108
+        }
+      },
+      {
+        "json": {
+          "material": "PUNTO DE LUZ CONMUTADO MANDANDO SOBRE DOS TOMAS DE USOS VARIOS",
+          "medida": "-",
+          "cantidad_unidades": 48
+        }
+      },
+      {
+        "json": {
+          "material": "DOBLE PULSADOR PARA SUBIDA Y BAJADA DE PERSIANAS",
+          "medida": "-",
+          "cantidad_unidades": 381
+        }
+      },
+      {
+        "json": {
+          "material": "TOMA DE USOS VARIOS GENERALES 16 A.",
+          "medida": "-",
+          "cantidad_unidades": 1521
+        }
+      },
+      {
+        "json": {
+          "material": "TOMA DE USOS VARIOS GENERALES 16 A CON 2 USB",
+          "medida": "-",
+          "cantidad_unidades": 234
+        }
+      },
+      {
+        "json": {
+          "material": "TOMA DE USOS VARIOS ESTANCA 16 A.",
+          "medida": "-",
+          "cantidad_unidades": 108
+        }
+      },
+      {
+        "json": {
+          "material": "TOMA DE USOS VARIOS PARA LAVAV/FRIG/CAMPANA/LAVAD/MICROONDAS",
+          "medida": "-",
+          "cantidad_unidades": 240
+        }
+      },
+      {
+        "json": {
+          "material": "TOMA DE USOS VARIOS PARA COCINA-HORNO",
+          "medida": "-",
+          "cantidad_unidades": 96
+        }
+      },
+      {
+        "json": {
+          "material": "PUNTO PULSADOR TIMBRE",
+          "medida": "-",
+          "cantidad_unidades": 48
+        }
+      },
+      {
+        "json": {
+          "material": "APLIQUE PARED EXTERIOR UP&DOWN 6W IP66",
+          "medida": "6w, 500 lm, IP66, CRI80, 2700k,Ópt.60º. De aluminio color gris antracita",
+          "cantidad_unidades": 326
+        }
+      },
+      {
+        "json": {
+          "material": "LUMINARIA EMPOTRAR 12W",
+          "medida": "12w, 1145 lm, IP20, CRI90, 3000k, Ópt.60º. De aluminio color blanco. Regulación ON-OFF",
+          "cantidad_unidades": 156
+        }
+      },
+      {
+        "json": {
+          "material": "LUMINARIA EMPOTRAR MODULO LED 6W",
+          "medida": "6w, 630 lm, IP20, CRI90, 3000k, Ópt.48º. De aluminio color blanco retranqueado. Regulación ON-OFF",
+          "cantidad_unidades": 729
+        }
+      },
+      {
+        "json": {
+          "material": "TIRA LED INTERIOR 9W/LM IP65 CON PERFIL Y DRIVER",
+          "medida": "9w/m, 920lm/m, IP65, CRI90, 2700k, Ópt.120º. 120 Puntos/m.",
+          "cantidad_unidades": 363
+        }
+      },
+      {
+        "json": {
+          "material": "TIRA LED EXTERIOR 9W/LM IP65 CON PERFIL Y DRIVER",
+          "medida": "9w/m, 920lm/m, IP65, CRI90, 2700k, Ópt.120º. 120 Puntos/m.",
+          "cantidad_unidades": 330
+        }
+      },
+      {
+        "json": {
+          "material": "PICA TOMA DE TIERRA 2,5 m C/TAPA REGISTRO",
+          "medida": "Pica cobrizada de D=14,3 mm. y 2 m. de longitud",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CONDUCTOR UNIPOLAR DE COBRE 35 mm2",
+          "medida": "Conductor de cobre desnudo de 35 mm2",
+          "cantidad_unidades": 14
+        }
+      },
+      {
+        "json": {
+          "material": "SOLDADURA ALUMINOTÉRMICA",
+          "medida": "Punto de soldadura aluminotérmica para red de tierras",
+          "cantidad_unidades": 987
+        }
+      },
+      {
+        "json": {
+          "material": "ARQUETA CON TOMA DE TIERRA REGLAMENTARIA",
+          "medida": "Incluida arqueta de 51x51 cm, pica de acero cobrizado de l= 2m. y D=14,6 mm.",
+          "cantidad_unidades": 280
+        }
+      },
+      {
+        "json": {
+          "material": "PROYECTO TÉCNICO Y BOLETÍN.",
+          "medida": "Proyecto, Boletín y entrega de documentación",
+          "cantidad_unidades": 10
+        }
+      },
+      {
+        "json": {
+          "material": "GetFace IP - Unidad básica con cámara",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "GetFace IP - Módulo de teclado",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "GetFace IP - Panel de información",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "GetFace IP - Instalación empotrada - Marco - 3 módulos (se instala con ZVP-FBOX3)",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "GetFace IP - Instalación empotrada - Caja - 3 módulos (se instala con ZVP-FFRA3)",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "GetFace IP - Cerradura eléctrica 12V/280mA DC",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "GetFace IP - Fuente de alimentación 12VDC (out) 2A/ 110-230VAC (in)",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "GetFace IP - Firewall + Switch para hasta 8 apartamentos",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "3xGetFace IP - Switch 8 Ports (hasta 60 viviendas)",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "3xGetFace IP - Switch 16 puertos",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "48xGetFace IP - Router de Seguridad para edificio de viviendas con red Zennio",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "KUPSupply 160mA. Fuente de alimentación universal KNX 160mA con 29VDC auxiliar",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "Z50 - Pantalla táctil capacitiva de 5\" - Blanco",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "Z50-Z70-Z100. Intercom License - Integración con el sistema de video portero Zennio Getface IP",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "GetFace IP - Router de Seguridad para edificio de viviendas con red Zennio",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "GetFace IP - ZenCom App License - 1 por vivienda. Recepción de llamada desde Zennio Getface IP (Válida por 5 años)",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "Documentación y programación básica de proyecto de vídeo portería de edificios de vivienda con 1 unidad GetFace IP y hasta 7 apt",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "5xProgramación adicional de hasta 10 apartamentos más respecto 8500024 (se requiere 8500024)",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "Programación adicional de hasta 3 unidades GetFace IP más respecto 8500024 (se requiere 8500024)",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "Partida completa de luminarias de emergencias de la marca OLIVA. Se incluye instalación y parte proporcional de elementos de sujección, conexión y montaje, tales como cableado, abrazaderas y resto de elementos. Se incluyen las siguientes luminarias de emergencias:",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "XXX EMERGENCIAS",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "XXX -EM1 097OLV00020120CAEVEM-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "ZZZ Luminaria de emergecia; no permanente, Ópt. EVACUACION, IP20. De aluminio color blanco. CON AUTOTEST",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "XXX -EM2 097OLV00020120CAAPEM-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "ZZZ Luminaria de emergecia, no permanente, Ópt. De ANTIPÁNICO, IP20. De aluminio color blanco. CON AUTOTEST",
+          "medida": "-",
+          "cantidad_unidades": 18
+        }
+      },
+      {
+        "json": {
+          "material": "XXX -EM3 097OLV00100166CAAPSP-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "ZZZ Luminaria de emergecia estanca, no permanente, Ópt. De ANTIPÁNICO, IP66. De policarbonato color blanco. CON AUTOTEST",
+          "medida": "-",
+          "cantidad_unidades": 71
+        }
+      },
+      {
+        "json": {
+          "material": "ZZZ CAJA Estanca",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "XXX -EM4 097OLV00110166CAAPEM-",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "ZZZ Luminaria de emergecia con marco de empotrar, no permanente, Ópt. De ANTIPÁNICO, IP66. De policarbonato color blanco. CON AUTOTEST",
+          "medida": "-",
+          "cantidad_unidades": 29
+        }
+      },
+      {
+        "json": {
+          "material": "ZZZ CAJA",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "EQUIPAMIENTO RECINTO INFERIOR (RITI)",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO PROTECCIÓN PARA RITI",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "EQUIPAMIENTO RECINTO SUPERIOR (RITS)",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CUADRO PROTECCIÓN PARA RITS",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "COMPROBACIONES Y PROTOCOLO DE PRUEBAS",
+          "medida": "-",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "Punto Derivación 4 vías, TELEVÉS 417",
+          "medida": "Derivador de 4 salidas, 17 dB de atenuación para TV terrestre y 17,5 dB para FI",
+          "cantidad_unidades": 6
+        }
+      },
+      {
+        "json": {
+          "material": "Punto Derivación 4 vías, TELEVÉS 420",
+          "medida": "Derivador de 4 salidas, 20,5 dB de atenuación para TV terrestre y 20 dB para FI",
+          "cantidad_unidades": 2
+        }
+      },
+      {
+        "json": {
+          "material": "Punto Distribución 2 vías, TELEVÉS 519502",
+          "medida": "Distribuidor de 2 salidas, 5 dB de atenuación para TV terrestre y 4 dB para FI",
+          "cantidad_unidades": 8
+        }
+      },
+      {
+        "json": {
+          "material": "Punto PAU+Distribución de 2 vías, TELEVÉS 519532",
+          "medida": "PAU+distribuidor de 2 salidas, 5-2.400 MHz, 5,0 dB de atenuación para TV terrestre y 4,0 dB para FI",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "Punto PAU+Distribución de 3 vías, TELEVÉS 519533",
+          "medida": "PAU+distribuidor de 3 salidas, 5-2.400 MHz, 8,0 dB de atenuación para TV terrestre y 7,0 dB para FI",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "Punto PAU+Distribución de 6 vías, TELEVÉS 519536",
+          "medida": "PAU+distribuidor de 6 salidas, 5-2.400 MHz, 12 dB de atenuación para TV terrestre y 11 dB para FI",
+          "cantidad_unidades": 16
+        }
+      },
+      {
+        "json": {
+          "material": "Punto PAU+Distribución de 8 vías, TELEVÉS 5433",
+          "medida": "PAU+distribuidor de 8 salidas, 5-2.400 MHz, 14 dB de atenuación para TV terrestre y 16 dB para FI",
+          "cantidad_unidades": 32
+        }
+      },
+      {
+        "json": {
+          "material": "Cableado 4 pares UTP Cat. 6 LSFH Dca TELEVÉS 2123",
+          "medida": "Cable 4 pares UTP Cat. 6, cubierta libre de halógenos",
+          "cantidad_unidades": 7523
+        }
+      },
+      {
+        "json": {
+          "material": "Cableado Multifibra 2 F.O. Monomodo LSFH Dca TELEVÉS 231901",
+          "medida": "Cable de 2 F.O. Rojo-Verde monomodo 9/125 G.657 A2",
+          "cantidad_unidades": 1321
+        }
+      },
+      {
+        "json": {
+          "material": "Punto Interconexión Fibra Óptica Armario Rack 19\" 24Ux60x60",
+          "medida": "Armario VDI cerrado 24U 600(A)x600(F) mm",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "Pto. Distrib. Fibra óptica (8 fibras) TELEVÉS 231301",
+          "medida": "Caja de segregación de hasta 8 fibras ópticas",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "PAU Pares Trenzados MUX 1 entrada 8+1 salidas TELEVÉS 546501",
+          "medida": "Multiplexor pasivo de 1 entrada y 8 salidas RJ-45",
+          "cantidad_unidades": 14
+        }
+      },
+      {
+        "json": {
+          "material": "PAU Cables de Fibra Óptica 2 adaptadores SC (h) TELEVÉS 2315",
+          "medida": "Roseta de fibra óptica con 2 adaptadores hembra SC",
+          "cantidad_unidades": 50
+        }
+      },
+      {
+        "json": {
+          "material": "ARQUETA ENTRADA 60x60x80 PREFABRICADA TAPA \"ICT\"",
+          "medida": "Arqueta de entrada prefabricada de hormigón de dimensiones interiores 60x60x80 cm.",
+          "cantidad_unidades": 48
+        }
+      },
+      {
+        "json": {
+          "material": "ARQUETA DE PASO 40x40x460 PREFABRICADA TAPA \"ICT\"",
+          "medida": "Arqueta de entrada prefabricada de hormigón de dimensiones interiores 40x40x40 cm.",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CANALIZACIÓN EXTERNA ENTERRADA PVC 6 Ø 63",
+          "medida": "Canalización externa en zanja bajo acera de 45x93 cm. para 6 conductos, en base 4, de PVC de 63 mm. de diámetro",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "CANALIZACIÓN ENLACE INFERIOR - TUBO PLÁSTICO 6 Ø 50",
+          "medida": "Canalización de enlace inferior, formada por 6 tubos de material plástico de Ø 50 mm",
+          "cantidad_unidades": 21
+        }
+      },
+      {
+        "json": {
+          "material": "CANALIZACIÓN PRINCIPAL - BANDEJA PVC 60 x 200 mm",
+          "medida": "Canalización Principal Horizontal, formada por bandeja de PVC-M1 de 60 x 200 mm, perforada",
+          "cantidad_unidades": 27
+        }
+      },
+      {
+        "json": {
+          "material": "CANALIZACIÓN PRINCIPAL - TUBO PLÁSTICO Ø 50",
+          "medida": "Canalización principal, formada por tubos de material plástico de Ø 50 mm",
+          "cantidad_unidades": 60
+        }
+      },
+      {
+        "json": {
+          "material": "CANALIZACIÓN SECUNDARIA ACCESO EMP. PVC 3 Ø 25",
+          "medida": "Canalización secundaria en montaje empotrado, formada por 3 tubos de PVC corrugado forrado de Ø 25 mm",
+          "cantidad_unidades": 570
+        }
+      },
+      {
+        "json": {
+          "material": "CANALIZACIÓN SECUNDARIA ACCESO SUP. PVC RÍGIDO 3 Ø 25",
+          "medida": "Canalización secundaria en montaje superficial, formada por 3 tubos de PVC rígido de Ø 25 mm",
+          "cantidad_unidades": 609
+        }
+      },
+      {
+        "json": {
+          "material": "CANALIZACIÓN LÍNEA ASCENSOR PVC Ø 25",
+          "medida": "Canalización empotrada para acometida de ascensores, formada por 1 tubo de PVC corrugado forrado de Ø 25 mm",
+          "cantidad_unidades": 117
+        }
+      },
+      {
+        "json": {
+          "material": "CANALIZACIÓN INTERIOR PVC Ø 20",
+          "medida": "Canalización empotrada para interior de usuario, formada por 1 tubo de PVC corrugado forrado de Ø 20 mm",
+          "cantidad_unidades": 30
+        }
+      },
+      {
+        "json": {
+          "material": "REGISTRO ENLACE INFERIOR ARMARIO",
+          "medida": "45x45x12 cm, acero galvanizado, IP 33, IK7",
+          "cantidad_unidades": 14
+        }
+      },
+      {
+        "json": {
+          "material": "REGISTRO SECUNDARIO 45x45x15 CON PUERTA EI2 60",
+          "medida": "45x45x15 cm, con puerta resistente al fuego EI2 60",
+          "cantidad_unidades": 2
+        }
+      },
+      {
+        "json": {
+          "material": "REGISTRO SECUNDARIO AMPLIFICACIÓN 45x45x15 CON PUERTA EI2 60",
+          "medida": "45x45x15 cm, con puerta resistente al fuego EI2 60",
+          "cantidad_unidades": 14
+        }
+      },
+      {
+        "json": {
+          "material": "REGISTRO SECUNDARIO ARMARIO 45x45x15",
+          "medida": "45x45x15 cm, armario metálico, IP 33, IK7",
+          "cantidad_unidades": 3
+        }
+      },
+      {
+        "json": {
+          "material": "REGISTRO SECUNDARIO ARMARIO 50x70x15",
+          "medida": "50x70x15 cm, armario metálico, IP 33, IK7",
+          "cantidad_unidades": 5
+        }
+      },
+      {
+        "json": {
+          "material": "REGISTRO PASO 13x18x8 cm",
+          "medida": "13x18x8 cm, grado de protección IP 66, IK 5",
+          "cantidad_unidades": 1
+        }
+      },
+      {
+        "json": {
+          "material": "REGISTRO PASO TIPO \"MINIPAU\" 20x30x6 cm",
+          "medida": "20x30x6 cm, grado de protección IP 33, IK 5",
+          "cantidad_unidades": 7
+        }
+      },
+      {
+        "json": {
+          "material": "REGISTRO PASO TIPO C 10x16x4 cm",
+          "medida": "10x16x4 cm, grado de protección IP 55, IK 10",
+          "cantidad_unidades": 42
+        }
+      },
+      {
+        "json": {
+          "material": "REGISTRO TERMINACIÓN DE RED 50x60x8 cm",
+          "medida": "50x60x8 cm, armario metálico, IP 33, IK 5",
+          "cantidad_unidades": 3
+        }
+      },
+      {
+        "json": {
+          "material": "REGISTRO DE TOMA CONFIGURABLE/COAX 64x64x42 cm",
+          "medida": "64x64x42 cm, grado de protección IP 33, IK 5",
+          "cantidad_unidades": 50
+        }
+      }
+    ],
+    "COTIZA": [
+      {
+        "json": {
+          "output": "Aquí se presenta una cotización detallada en base a su solicitud:\n\n- **Producto:** CANALIZACION ENTUBADA ENTERRADA  \n  - **Precio unitario:** $50.00 USD  \n  - **Cantidad solicitada:** 26 unidades  \n  - **Precio total:** $1300.00 USD  \n\n**Cotización Total: $1300.00 USD**"
+        }
+      },
+      {
+        "json": {
+          "output": "Aquí se presenta una cotización detallada en base a su solicitud:\n\n- **Producto:** LINEA BT 3X240+1X150  \n  - **Precio unitario:** $75.00 USD  \n  - **Cantidad solicitada:** 225 unidades  \n  - **Precio total:** $16,875.00 USD  \n\n**Cotización Total:** $16,875.00 USD"
+        }
+      },
+      {
+        "json": {
+          "output": "Aquí se presenta una cotización detallada en base a su solicitud:\n\n- **Producto:** TERMINALES BT CGP  \n  - **Precio unitario:** $100.00 USD  \n  - **Cantidad solicitada:** 5 unidades  \n  - **Precio total:** $500.00 USD  \n\n**Cotización Total:** $500.00 USD"
+        }
+      },
+      {
+        "json": {
+          "output": "Aquí se presenta una cotización detallada en base a su solicitud:\n\n- 📦 Producto: TERMINALES BT CBT  \n  - 💰 Precio unitario: $110.00 USD  \n  - 🔢 Cantidad solicitada: 5 unidades  \n  - 🏷 Precio total: $550.00 USD  \n\n**Cotización Total: $550.00 USD**"
+        }
+      },
+      {
+        "json": {
+          "output": "Aquí se presenta una cotización detallada en base a su solicitud:\n\n- 📦 Producto: **Tramitación Licencia Ayuntamiento**  \n  💰 Precio unitario: **$500.00 USD**  \n  🔢 Cantidad solicitada: **1 unidad**  \n  🏷 Precio total: **$500.00 USD**  \n\n**Cotización Total: $500.00 USD**"
+        }
+      },
+      {
+        "json": {
+          "output": "Aquí se presenta una cotización detallada en base a su solicitud:\n\n- 📦 Producto: REALIZACIÓN DE ENSAYOS  \n  - 💰 Precio unitario: $150.00 USD  \n  - 🔢 Cantidad solicitada: 5 unidades  \n  - 🏷 Precio total: $750.00 USD  \n\n**Cotización Total: $750.00 USD**"
+        }
+      },
+      {
+        "json": {
+          "output": "Aquí se presenta una cotización detallada en base a su solicitud:\n\n- 📦 Producto: PROYECTO BT  \n- 💰 Precio unitario: $1200.00 USD  \n- 🔢 Cantidad solicitada: 1 unidad  \n- 🏷 Precio total: $1200.00 USD  \n\n**Cotización Total: $1200.00 USD**"
+        }
+      },
+      {
+        "json": {
+          "output": "Aquí se presenta una cotización detallada en base a su solicitud:\n\n- **Producto:** PLANO CARTOGRÁFICO  \n- **Precio unitario:** $800.00 USD  \n- **Cantidad solicitada:** 1 unidad  \n- **Precio total:** $800.00 USD  \n\n**Cotización Total:** $800.00 USD"
+        }
+      },
+      {
+        "json": {
+          "output": "Aquí se presenta una cotización detallada en base a su solicitud:\n\n- **Producto:** TRAMITACIÓN CON LA COMPAÑIA ELECTRICA Y PAGO DERECHOS DE ENGANCH  \n  - **Precio unitario:** $2000.00 USD  \n  - **Cantidad solicitada:** 1 unidad  \n  - **Precio total:** $2000.00 USD  \n\n**Cotización Total:** $2000.00 USD"
+        }
+      },
+      {
+        "json": {
+          "output": "Aquí se presenta una cotización detallada en base a su solicitud:\n\n- **Producto:** CENTRO DE TRANSFORMACIÓN 400 KVAS  \n  - **Precio unitario:** $15,000.00 USD  \n  - **Cantidad solicitada:** 1 unidad  \n  - **Precio total:** $15,000.00 USD  \n\n**Cotización Total:** $15,000.00 USD"
+        }
+      },
+      {
+        "json": {
+          "output": "Aquí se presenta una cotización detallada en base a su solicitud:\n\n- **Producto:** PREVISION ACOMETIDA CGP (4x240) MM2 DE ALUMINIO ENTERRADA  \n  - **Precio unitario:** $5000.00 USD  \n  - **Cantidad solicitada:** 1 unidad  \n  - **Precio total:** $5000.00 USD  \n\n**Cotización Total:** $5000.00 USD"
+        }
+      },
+      {
+        "json": {
+          "output": "Aquí se presenta una cotización detallada en base a su solicitud:\n\n- **Producto:** CAJA GENERAL DE PROTECCIÓN DE 250A  \n  - **Precio unitario:** $1200.00 USD  \n  - **Cantidad solicitada:** 1 unidad  \n  - **Precio total:** $1200.00 USD  \n\n**Cotización Total:** $1200.00 USD"
+        }
+      },
+      {
+        "json": {
+          "output": "Aquí se presenta una cotización detallada en base a su solicitud:\n\n- **Producto:** CAJA GENERAL DE PROTECCIÓN Y MEDIDA 160A  \n  - **Precio unitario:** $1000.00 USD  \n  - **Cantidad solicitada:** 1 unidad  \n  - **Precio total:** $1000.00 USD  \n\n**Cotización Total:** $1000.00 USD"
+        }
+      },
+      {
+        "json": {
+          "output": "Aquí se presenta una cotización detallada en base a su solicitud:\n\n- 📦 Producto: CENTRALIZACION DE CONTADORES PORTAL 1 + 16 VIVIENDAS PORTAL 1  \n  - 💰 Precio unitario: $3000.00 USD  \n  - 🔢 Cantidad solicitada: 1 unidad  \n  - 🏷 Precio total: $3000.00 USD  \n\n**Cotización Total: $3000.00 USD**"
+        }
+      },
+      {
+        "json": {
+          "output": "Aquí se presenta una cotización detallada en base a su solicitud:\n\n- **Producto:** CENTRALIZACION DE CONTADORES PORTAL 2 + 16 VIVIENDAS PORTAL 2  \n  - **Precio unitario:** $3000.00 USD  \n  - **Cantidad solicitada:** 1 unidad  \n  - **Precio total:** $3000.00 USD  \n\n**Cotización Total:** $3000.00 USD"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extracción de información",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "formateo",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "COTIZA",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Extracción de información",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Extracción de información",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extracción de información": {
+      "main": [
+        [
+          {
+            "node": "formateo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "formateo": {
+      "main": [
+        [
+          {
+            "node": "información estructurada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "información estructurada": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cotizaciones": {
+      "ai_tool": [
+        [
+          {
+            "node": "COTIZA",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "COTIZA",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "COTIZA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "formateo",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "COTIZA": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "WhatsApp Business Cloud",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1c8a248a-de8c-4760-94b8-b165e30237c4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "JdXlq3DeLrnSU024",
+  "tags": [
+    {
+      "createdAt": "2025-04-01T08:53:41.401Z",
+      "updatedAt": "2025-04-01T08:53:41.401Z",
+      "id": "c2Cv0QA3MaRipfvp",
+      "name": "demo_isse"
+    }
+  ]
+}
