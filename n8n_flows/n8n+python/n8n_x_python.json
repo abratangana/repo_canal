@@ -1,0 +1,138 @@
+{
+  "name": "n8n_x_python",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4cc3388e-6df1-4f9a-a22c-e5e3cf98ed64",
+      "name": "When chat message received",
+      "webhookId": "55f1d186-6e6e-43aa-9ea8-b489bf0110c7"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Usa tu herramienta de http para buscar informacion de la biblia haciendo una query enriquecida segun lo que te solicite el usuario"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "48570968-1861-4679-8c43-f1c7c9c9b19c",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Usa esta herramienta para recuperar información de la biblia",
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/search_biblia",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $fromAI('consulta','genera una consulta optimiza y con mas contexto para recuperar informacion correctamente de la biblia') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        220
+      ],
+      "id": "594925ef-d57c-410a-8f64-80f698fb1a16",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        120,
+        200
+      ],
+      "id": "7b3f0b54-1649-49d6-8b4b-c8491ddddb25",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "WfHirX6TyhZYsgaV",
+          "name": "OpenAi_myfirstia"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "82c510fd-4ace-48e9-827e-ab1eab04a72d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "bCQl13WHXng0Q2mt",
+  "tags": [
+    {
+      "createdAt": "2025-06-23T23:25:14.026Z",
+      "updatedAt": "2025-06-23T23:25:14.026Z",
+      "id": "0muwIBVeI17GrJme",
+      "name": "rag"
+    }
+  ]
+}
