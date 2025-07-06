@@ -1,0 +1,1260 @@
+{
+  "name": "comparacion_pedidos",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "o4-mini",
+          "mode": "list",
+          "cachedResultName": "o4-mini"
+        },
+        "options": {
+          "frequencyPenalty": 0,
+          "responseFormat": "json_object",
+          "presencePenalty": 0,
+          "reasoningEffort": "high",
+          "timeout": 60000000,
+          "maxRetries": 5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1800,
+        360
+      ],
+      "id": "e217139d-53e6-442c-81f9-7f8349424136",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "WfHirX6TyhZYsgaV",
+          "name": "OpenAi_myfirstia"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        1300,
+        120
+      ],
+      "id": "e03a84cd-4f41-4b16-bec4-327e30b6e9ea",
+      "name": "Merge",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "02a8dc86-1957-4454-8380-6b240ed208a9",
+              "leftValue": "={{ $json.Resultado.toBoolean() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2860,
+        120
+      ],
+      "id": "7f8be2f6-65dc-4598-8020-dd7b29328c44",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"resultado\": true,\n  \"descripcion\": \"Se detectaron todos los escenarios y todo coincide con los detalles----'.\"\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        2520,
+        420
+      ],
+      "id": "38bcad0a-ed73-421b-85b5-9269c45a50cf",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "418a638b-c9ce-4f19-97dd-e069e747cf46",
+              "name": "Todo ok",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3080,
+        -40
+      ],
+      "id": "7a59053c-96f6-47ed-9a4c-315c309717ff",
+      "name": "bien"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1580,
+        120
+      ],
+      "id": "35a03066-4f64-4b9c-8abb-d8e00e86bd89",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Aquí está la data para ambos casos:\n\n ORDEN DE PEDIDO: {{ $json.data[0].markdown }}\n\nCONFIRMACION DE LA ORDEN: {{ $json.data[1].data[0].propertyName[0] }}",
+        "options": {
+          "systemMessage": "<system_prompt>\n\nERES UN ANALISTA HIPERESPECIALIZADO EN VALIDACIÓN DE PEDIDOS, ENTRENADO PARA DETECTAR CORRESPONDENCIAS FUNCIONALES ENTRE ÓRDENES DE PEDIDO (OP) Y CONFIRMACIONES DE PEDIDO (CP), INCLUSO CUANDO EXISTEN DIFERENCIAS DE TERMINOLOGÍA, ESTRUCTURA O FORMATO. TU FUNCIÓN PRINCIPAL ES EVALUAR LA EQUIVALENCIA FUNCIONAL Y (CUANDO APLIQUE) FINANCIERA DE LOS ÍTEMS INCLUIDOS EN LA OP EN RELACIÓN A LA CP.\n\n---\n\n## 🧠 CADENA DE PENSAMIENTO DETALLADA (CHAIN OF THOUGHT) ##\n\n1. **LECTURA CONTEXTUAL COMPLETA**:\n   - ANALIZA AMBOS DOCUMENTOS EN SU TOTALIDAD, INCLUYENDO CABECERAS, TABLAS Y PIE DE PÁGINA.\n   - DETECTA CONTEXTO GLOBAL COMO ATRIBUTOS DEFINIDOS FUERA DE LA LÍNEA DEL ÍTEM.\n\n2. **NORMALIZACIÓN DE ÍTEMS DE LA OP**:\n   - EXTRAER: FUNCIÓN, MODELO, COLOR, DIMENSIONES, CANTIDAD.\n   - RECOGER ATRIBUTOS DISPERSOS.\n\n3. **NORMALIZACIÓN DE ÍTEMS DE LA CP**:\n   - IDENTIFICAR ÍTEMS AUN SI TIENEN DESCRIPCIÓN DIFERENTE.\n   - UNIFICAR FORMATO DE ATRIBUTOS PARA COMPARAR.\n\n4. **COMPARACIÓN FUNCIONAL ITEM A ITEM**:\n   - PARA CADA ÍTEM DE LA OP, EVALUAR:\n     - ¿LA FUNCIÓN ES IGUAL?\n     - ¿COINCIDEN DIMENSIONES, COLOR, MODELO Y CANTIDAD?\n     - ¿LOS ATRIBUTOS ESTÁN CLARAMENTE DEFINIDOS EN LA CP?\n\n5. **VERIFICACIÓN DEL MONTO FINAL (CONDICIONAL)**:\n   - SOLO SI AMBOS DOCUMENTOS LO PRESENTAN CLARAMENTE.\n   - COMPARAR Y APLICAR MARGEN DE 1€ COMO UMBRAL MÁXIMO DE TOLERANCIA.\n\n6. **GENERACIÓN DEL OUTPUT**:\n   - FORMATO JSON CON SOLO LOS CAMPOS `\"resultado\"` Y `\"descripcion\"`.\n   - INCLUIR EXPLICACIONES DETALLADAS PARA CADA DISCREPANCIA O MATCH DETECTADO.\n\n---\n\n### 🔍  (ANÁLISIS CONTEXTUAL): ###\n- DEBES LEER AMBOS DOCUMENTOS EN SU TOTALIDAD PARA CAPTAR CONTEXTO GLOBAL.\n- IDENTIFICA ATRIBUTOS QUE PUEDAN ESTAR DISPERSOS (e.g., color, modelo, medidas, cantidades).\n- PRIORIZA EL SIGNIFICADO FUNCIONAL DEL ÍTEM SOBRE SU NOMBRE EXACTO.\n\n### 🔧  (SEMÁNTICA FUNCIONAL): ###\n- DETECTA EQUIVALENCIAS FUNCIONALES AUNQUE LA TERMINOLOGÍA VARÍE.\n- \"PUERTA C/T\" ES FUNCIONALMENTE IGUAL A \"PUERTA CON MARCO\" SI EL RESTO DE ATRIBUTOS COINCIDEN.\n- NO BASTA UNA COINCIDENCIA LITERAL: SE REQUIERE UNA FUNCIÓN Y ATRIBUTOS IGUALES.\n\n### 📊  (PATRONES Y ATRIBUTOS): ###\n- PARA CADA ÍTEM DE LA OP, EXTRAER:\n  - FUNCIÓN PRINCIPAL\n  - COLOR\n  - DIMENSIONES\n  - MODELO/CÓDIGO\n  - CANTIDAD Y UNIDAD\n- NORMALIZA LA INFORMACIÓN PARA PODER COMPARAR CON SU CONTRAPARTE EN LA CP.\n\n### 🔁  (EVALUACIÓN ITEM A ITEM): ###\n- COMPARA CADA ÍTEM DE LA OP CONTRA POSIBLES MATCHES EN LA CP.\n- SI NO EXISTE UN MATCH FUNCIONAL CLARO Y COMPLETO, EL RESULTADO DEBE SER `false`.\n- VERIFICA CANTIDADES Y ATRIBUTOS INCLUSO CUANDO ESTÉN DISTRIBUIDOS EN DISTINTAS ZONAS.\n\n### 📉  (CONDICIONALIDAD DE MONTO): ###\n- SOLO EVALUAR EL MONTO TOTAL SI AMBOS DOCUMENTOS LO PRESENTAN DE FORMA CLARA Y ESTRUCTURADA.\n- SI AMBOS MONTOS SON EXTRAÍBLES Y LA DIFERENCIA ES > 1€, EL RESULTADO DEBE SER `false`.\n- SI UNO DE LOS DOS DOCUMENTOS NO INCLUYE MONTO TOTAL, NO CONSIDERARLO COMO FACTOR DECISIVO.\n\n### 🔐  (CONTROL DE REFERENCIA): ###\n- EL NÚMERO DE REFERENCIA **NO DEBE SER EXTRAÍDO NI FORMAR PARTE DEL OUTPUT**.\n- SOLO UTILÍZALO PARA PROPÓSITOS INTERNOS DE COMPARACIÓN SI ESTÁ PRESENTE EN LA OP.\n- SI NO FIGURA EN LA CP, NO IMPLICA FALLO ALGUNO.\n\n## RESPONSABLES\n\n- ERES EL RESPONSABLE DE EJECUTAR CADA UNO DE LOS PASOS Y SUS PARAMETROS DE MANERA IMPECABLE SEGUIENDO LAS INSTRUCCIONES DADAS\n\n\n## 🧪 EJEMPLOS DE RESPUESTA VÁLIDA ##\n\n- COSTADO DECORATIVO 800×375 (1 ud) → Costado 1 Cara 800×375×19 (1 ud)  \n\n✅ COINCIDENCIA FUNCIONAL:\n```json\n{\n  \"resultado\": true,\n  \"descripcion\": \"El ítem 'VENTANA OSCILOBATIENTE 1200x1000 BLANCA' en la OP coincide funcionalmente con 'VENTANA OB (mod. 45)' en la CP. Las dimensiones y el color están definidos en la cabecera. La cantidad y unidad coinciden.\"\n}\n```\n- PUERTA DERECHA 707×397 (1 ud) → NO existe ningún ítem 707×397 en la CP.\n\n❌ DISCREPANCIA FUNCIONAL Y MONTO NO EVALUADO:\n```json\n{\n  \"resultado\": false,\n  \"descripcion\": \"El ítem 'PUERTA NEGRA 2150x617' no tiene correspondencia funcional en la CP. Se menciona una 'PUERTA 8001', pero no se especifica color ni dimensiones. La CP tampoco presenta monto final, por lo que no se evaluó ese aspecto.\"\n}\n```\n\n\n---\n\n## CONTEXTO\n\n- ESTAS TRABAJANDO PARA EL DEPARTAMENTO DE COMPRAS DE UNA EMPRESA LA CUAL EMITE ORDENES DE PEDIDO Y TIENE QUE CONFIRMAR QUE LA RESPUESTA DEL PROVEEDOR CUMPLA CON LAS EXPECTATIVAS CLARAS DEL PEDIDO INICIAL, ESTE TRABAJO ES CLAVE YA QUE TODA LA OPERATIVA DE LA EMPRESA DEPENDE DE ELLO Y TU SALARIO PARA MANTENER A TU FAMILIA TAMBIÉN, DE MODO QUE ES INDISPENSABLE QUE SE HAGA CORRECTAMENTE ESTE PROCESO.\n\n## ⚠️ QUÉ NO HACER (NEGATIVE PROMPT) ##\n\n- ❌ **NO EXTRAIGAS REFERENCIAS** NI LAS INCLUYAS EN EL OUTPUT. IGNORA \"PO/\", \"Nº\", ETC.\n- ❌ **NO ASUMAS COINCIDENCIA FUNCIONAL POR TERMINOLOGÍA SIMILAR SI LOS ATRIBUTOS NO COINCIDEN.**\n- ❌ **NO GENERES RESPUESTAS AMBIGUAS** COMO “COINCIDENCIA DETECTADA” SIN EXPLICACIÓN FUNCIONAL.\n- ❌ **NO GENERES OUTPUTS QUE ROMPAN EL PARSER**: EL OUTPUT DEBE TENER SOLO `\"resultado\"` Y `\"descripcion\"`.\n- ❌ **NO OMITAS ATRIBUTOS CLAVE** COMO DIMENSIONES, COLOR, CANTIDAD O FUNCIÓN EN LA COMPARACIÓN.\n- ❌ **NO EVALÚES EL MONTO TOTAL SI ALGUNO DE LOS DOCUMENTOS NO LO PRESENTA DE FORMA EXPLÍCITA.**\n- ❌ **NO RETORNES TRUE SI HAY ALGUNA DISCREPANCIA.**\n---\n\n### ✅  (TIPO DE OUTPUT ESTRICTO): ###\n- FORMATO ÚNICO OBLIGATORIO DEL OUTPUT:\n```json\n{\n  \"resultado\": true | false,\n  \"descripcion\": \"Texto explicativo que detalle claramente si hay coincidencia funcional item a item, o bien, donde se produce la discrepancia. Incluir detalles sobre cantidades, atributos funcionales, y razones específicas si el resultado es false.\"\n}\n```\n\n\n---\n\n## 🚨 REGLAS CRÍTICAS A RECORDAR ##\n\n- TODOS LOS ÍTEMS DE LA OP DEBEN TENER MATCH FUNCIONAL COMPLETO EN LA CP.\n- EL MONTO FINAL SOLO CUENTA SI AMBOS DOCUMENTOS LO INCLUYEN CLARAMENTE.\n- LA REFERENCIA SOLO SE USA COMO AYUDA PARA MATCHES — JAMÁS SE EXTRAE NI INCLUYE EN EL OUTPUT.\n- FORMATO ESTRICTO: SOLO `\"resultado\"` Y `\"descripcion\"`. NADA MÁS.\n\n</system_prompt>"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        1860,
+        120
+      ],
+      "id": "9483cb75-2d2e-4863-9fc1-0639d6c24cfc",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        260,
+        -100
+      ],
+      "id": "e8fc53ef-a238-4867-b36b-53146c56cab6",
+      "name": "Wait",
+      "webhookId": "29087fb3-feda-4fba-ba81-2584454f4eda"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6796724a-be51-4b80-b8ec-cca1cbcf6d64",
+              "name": "Todo mal",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3080,
+        320
+      ],
+      "id": "61c760f0-dd57-4e80-a222-20723eef1dda",
+      "name": "Mal"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        140,
+        300
+      ],
+      "id": "1d679669-8eac-4508-a2d3-51db7ef5240e",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        560,
+        340
+      ],
+      "id": "73dc3ed3-46c8-4b81-85e9-16690d81b2c3",
+      "name": "Wait2",
+      "webhookId": "0e275260-cdb5-4ca1-b141-050f2d971b38"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloud.llamaindex.ai/api/v1/parsing/upload",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer llx-gAgBe5eyYFBCtucDyeZGiUWLyTmAryUm5U4jG0PXLz0b7TDh"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "premium_mode",
+              "value": "true"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "parsing_instructions",
+              "value": "Extraer con la máxima fidelidad posible, prestando especial atención a la estructura de las tablas, la correcta secuenciación del texto en diseños complejos de varias columnas, y la integridad de los elementos visuales descritos. Convertir ecuaciones a LaTeX si es posible. No omitir texto en cabeceras, pies de página o notas al margen."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        80,
+        -100
+      ],
+      "id": "24c4a6e3-e640-4f09-b29e-c8e5a905f69f",
+      "name": "Creación de trabajo"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloud.llamaindex.ai/api/v1/parsing/upload",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer llx-gAgBe5eyYFBCtucDyeZGiUWLyTmAryUm5U4jG0PXLz0b7TDh"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "=data"
+            },
+            {
+              "name": "parsing_instructions",
+              "value": "Extraer con la máxima fidelidad posible, prestando especial atención a la estructura de las tablas, la correcta secuenciación del texto en diseños complejos de varias columnas, y la integridad de los elementos visuales descritos. Convertir ecuaciones a LaTeX si es posible. No omitir texto en cabeceras, pies de página o notas al margen."
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 4000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        380,
+        340
+      ],
+      "id": "3429530a-a0e2-48db-a324-add566a272d3",
+      "name": "Creación de trabajo2",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "=https://api.cloud.llamaindex.ai/api/v1/parsing/job/{{ $json.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer llx-gAgBe5eyYFBCtucDyeZGiUWLyTmAryUm5U4jG0PXLz0b7TDh"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        420,
+        -100
+      ],
+      "id": "b960c5e4-f051-422e-b5fe-8688507fb5b9",
+      "name": "Estatus",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "=https://api.cloud.llamaindex.ai/api/v1/parsing/job/{{ $json.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer llx-gAgBe5eyYFBCtucDyeZGiUWLyTmAryUm5U4jG0PXLz0b7TDh"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        340
+      ],
+      "id": "ad173061-9748-4ce2-8daa-0ea77e626faa",
+      "name": "Estatus 2",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "url": "=https://api.cloud.llamaindex.ai/api/v1/parsing/job/{{ $json.id }}/result/markdown ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer llx-gAgBe5eyYFBCtucDyeZGiUWLyTmAryUm5U4jG0PXLz0b7TDh"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        580,
+        -100
+      ],
+      "id": "74da630e-a969-4bb1-ad27-a26f76b9885c",
+      "name": "Obtener data",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "=https://api.cloud.llamaindex.ai/api/v1/parsing/job/{{ $json.id }}/result/markdown ",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer llx-gAgBe5eyYFBCtucDyeZGiUWLyTmAryUm5U4jG0PXLz0b7TDh"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        340
+      ],
+      "id": "4365bac5-195b-4bb6-a785-9b9dd59edbfb",
+      "name": "Obtener data 2",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        860,
+        120
+      ],
+      "id": "056f34a0-fc7a-46f4-ad42-81be35dba125",
+      "name": "Sintetizar_confirmación"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtenemos todos los items del nodo “testing”\nconst allItems = $(\"confirmacion\").all();\nconst results = [];\n\nfor (const item of allItems) {\n  // Si no hay datos binarios, pasamos al siguiente item\n  const binaries = item.binary || {};\n\n  // Recorremos cada campo binario en este item\n  for (const key in binaries) {\n    const binaryData = binaries[key]; // Objeto con { data, fileName, mimeType, ... }\n\n    // 1) Validar que exista fileName y mimeType\n    const fileName = binaryData.fileName || \"\";\n    const mimeType = binaryData.mimeType || \"\";\n\n    // 2) Comprobar que sea PDF por extensión o por mimeType\n    const isPdfByExtension = fileName.toLowerCase().endsWith(\".pdf\");\n    const isPdfByMimeType = mimeType === \"application/pdf\";\n\n    if (isPdfByExtension || isPdfByMimeType) {\n      // Solo si es PDF, empujamos a los resultados\n      results.push({\n        binary: {\n          data: binaryData, // conservamos todo el buffer/data\n        },\n        json: {\n          inputFieldName: 'data',\n          originalName: key,\n          // Si no tiene fileName, forzamos extensión .pdf\n          fileName: fileName || `${key}.pdf`,\n        }\n      });\n    }\n    // Si no es PDF, simplemente ignoramos este key y no lo agregamos\n  }\n}\n\n// Devolvemos únicamente los adjuntos que cumplen con PDF\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -140,
+        300
+      ],
+      "id": "2f4d2131-c49b-4722-ba5b-d867f36d501d",
+      "name": "Junta de archivos"
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "buffer",
+        "messageData": "={{ $json.markdown }}",
+        "tail": true
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1060,
+        340
+      ],
+      "id": "5c596f97-4750-41f4-af74-146c65e7e735",
+      "name": "push_buffer",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "buffer",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        620,
+        120
+      ],
+      "id": "f724cf25-34d1-480f-bef9-213532476b37",
+      "name": "Pull_buffer"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "buffer"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1580,
+        -80
+      ],
+      "id": "3c760a8c-63a7-4a2c-87bc-620d60b24191",
+      "name": "Detele_buffer"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        120
+      ],
+      "id": "ba1a216a-6471-4cd9-888a-e6b8a35ec998",
+      "name": "Chao"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5ad136e2-6305-4ab0-9f6a-5542e13c5273",
+              "leftValue": "={{ $json.output.resultado }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -540,
+        100
+      ],
+      "id": "210b6ad0-5f75-4f22-ac6c-f47db86f9ec6",
+      "name": "Validando"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3240,
+        320
+      ],
+      "id": "24c602ba-941b-4b81-9692-c74733dd32c3",
+      "name": "No Operation, do nothing1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtenemos todos los items del nodo “testing”\nconst allItems = $(\"ORDEN_PEDIDO\").all();\nconst results = [];\n\nfor (const item of allItems) {\n  // Si no hay datos binarios, pasamos al siguiente item\n  const binaries = item.binary || {};\n\n  // Recorremos cada campo binario en este item\n  for (const key in binaries) {\n    const binaryData = binaries[key]; // Objeto con { data, fileName, mimeType, ... }\n\n    // 1) Validar que exista fileName y mimeType\n    const fileName = binaryData.fileName || \"\";\n    const mimeType = binaryData.mimeType || \"\";\n\n    // 2) Comprobar que sea PDF por extensión o por mimeType\n    const isPdfByExtension = fileName.toLowerCase().endsWith(\".pdf\");\n    const isPdfByMimeType = mimeType === \"application/pdf\";\n\n    if (isPdfByExtension || isPdfByMimeType) {\n      // Solo si es PDF, empujamos a los resultados\n      results.push({\n        binary: {\n          data: binaryData, // conservamos todo el buffer/data\n        },\n        json: {\n          inputFieldName: 'data',\n          originalName: key,\n          // Si no tiene fileName, forzamos extensión .pdf\n          fileName: fileName || `${key}.pdf`,\n        }\n      });\n    }\n    // Si no es PDF, simplemente ignoramos este key y no lo agregamos\n  }\n}\n\n// Devolvemos únicamente los adjuntos que cumplen con PDF\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -120,
+        -100
+      ],
+      "id": "e21667be-cc31-4a44-b9b8-45ed9c80bbb8",
+      "name": "Filtrado de archivos"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=El texto a analizar es:\n\n{{ $json.output }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "<system_prompt> TU TAREA ES MUY SIMPLE:  1. RECIBIRÁS UN JSON CON DOS CAMPOS: \"resultado\" Y \"descripcion\"  2. DEBES COPIAR **EXACTAMENTE** ESOS DOS VALORES Y PEGARLOS EN ESTE FORMATO:  {   \"resultado\": [valor],   \"descripcion\": \"[texto]\" }  3. NO CAMBIES NINGÚN TEXTO 4. NO INVENTES NADA   ✅ EJEMPLO:  ENTRADA: {   \"resultado\": true,   \"descripcion\": \"Todo coincide con los detalles.\",    }  SALIDA: {   \"resultado\": true,   \"descripcion\": \"Todo coincide con los detalles.\",   }  🚫 NO HAGAS ESTO: - NO EXPLIQUES NADA - NO RESUMAS - NO CAMBIES PALABRAS - NO BORRES CAMPOS  SOLO COPIA Y PEGA LOS TRES CAMPOS EN ESE FORMATO.   # NOTA: ASEGURATE RETORNAR EL RESULTADO EN UN DATO BOOLEANO VALIDO.</system_prompt>"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        2300,
+        120
+      ],
+      "id": "b3277f07-a117-4b0c-8a9f-bc0a82025515",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-nano",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-nano"
+        },
+        "options": {
+          "temperature": 0.1,
+          "topP": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2280,
+        420
+      ],
+      "id": "14c2d61f-bdc2-44a1-ae74-12e09ea2daa2",
+      "name": "OpenAI Chat Model2"
+    },
+    {
+      "parameters": {
+        "resource": "folderMessage",
+        "folderId": {
+          "__rl": true,
+          "value": "AQMkADgzYzBhZTU1AC0yNWI1LTQ5NmUtYmQyMy0xNmEyMzIzZWExZDUALgAAA4H-UkPlQapNt0XbTVzt24kBAHQU56hgMDNLkaCEZQJGyyQAAAIBCQAAAA==",
+          "mode": "list",
+          "cachedResultName": "Elementos enviados",
+          "cachedResultUrl": "https://outlook.office365.com/mail/AQMkADgzYzBhZTU1AC0yNWI1LTQ5NmUtYmQyMy0xNmEyMzIzZWExZDUALgAAA4H%2FUkPlQapNt0XbTVzt24kBAHQU56hgMDNLkaCEZQJGyyQAAAIBCQAAAA%3D%3D"
+        },
+        "limit": 1,
+        "filtersUI": {
+          "values": {
+            "filters": {
+              "custom": "=contains(subject, 'Pedido de compra {{ $json.output.referencia }} de Muebles Incosur S.L.U')",
+              "hasAttachments": true
+            }
+          }
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        -300,
+        -100
+      ],
+      "id": "ea4a1617-b094-4aaf-ba15-3a2292ffab6b",
+      "name": "ORDEN_PEDIDO",
+      "webhookId": "3e3d54aa-3f2f-44d6-bfca-ba9e01f67f2b",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "szILXkkNbmXg5smX",
+          "name": "inko_compras"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "ejecuciones_compras_comparativa",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "resultado",
+              "fieldValue": "={{true}}"
+            },
+            {
+              "fieldId": "descripción",
+              "fieldValue": "={{ $json.output.descripcion }}"
+            },
+            {
+              "fieldId": "numero_referencia",
+              "fieldValue": "={{ $json.output.referencia }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3440,
+        -40
+      ],
+      "id": "ad1d5774-e0c7-441d-accd-6b9546c10fc7",
+      "name": "Supabase",
+      "disabled": true
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3240,
+        -40
+      ],
+      "id": "42bf1680-b98b-48a0-8500-ab3bd5b62062",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "tableId": "ejecuciones_compras_comparativa",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "resultado",
+              "fieldValue": "={{false}}"
+            },
+            {
+              "fieldId": "descripción",
+              "fieldValue": "={{ $json.output.descripcion }}"
+            },
+            {
+              "fieldId": "numero_referencia",
+              "fieldValue": "={{ $json.output.referencia }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        3440,
+        320
+      ],
+      "id": "e4e8c019-810e-4084-a0a1-2c16d4907056",
+      "name": "Supabase1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=La cabecera del correo a analizar es:\n{{ $json.subject }}\n\nEl correo lo emite:\n{{ $json.from }}\n\nASEGURATE DE EXTRAER LA REFERENCIA EN EL FORMATO CORRECTO EN CASO DE SER NECESARIO\n\nY el cuerpo es:\n{{ $json.bodyPreview }}\n\nIdentifica el topico, cuando sea la confirmación de un pedido en CUALQUIER CASO (ejemplo: 'su pedido fue tramitado', o 'confirmacion de pedido...', o 'su pedido fue registrado con exito...') identifica el topico de manera precisa. se debe retornar true con el respectivo numero de referencia.\n\nLA REFERENCIA DEBE SER EXTRAIDA SIN NINGUNA CLASE DE PREFIJO, ESTO ES OBLIGATORIO.\n\nIDENTIFICA EL TOPICO INCLUSO SI NO ESTÁ EN ESPAÑOL, SIEMPRE QUE ESTE RELACIONADO A LA CONFIRMACION DE UN PEDIDO ES TRUE.\n\n##NOTAS:\n\n- IDENTIFICA EL TOPICO INCLUSO SI ESTA EN ITALIANO O INGLES. PODRÍA LLEGAR TAMBIEN EN ESOS CASOS, ANALIZA SI ES OTRO IDIOMA Y CORRESPONDE A LA CONFIRMACION DE UN PEDIDO.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=<system_prompt>\nROL Y DIRECTIVA PRIMARIA:\nACTÚAS COMO UN MOTOR DE ANÁLISIS Y EXTRACCIÓN DE DATOS HIPERPRECISO. TU ÚNICA FUNCIÓN ES PROCESAR EL TEXTO DE ENTRADA (CORREO ELECTRÓNICO) Y DEVOLVER UN OBJETO JSON BASADO EN UN CONJUNTO ESTRICTO DE REGLAS. LA PRECISIÓN ES CRÍTICA. EL VALOR POR DEFECTO ES SIEMPRE {\"resultado\": false, \"referencia\": null} A MENOS QUE SE CUMPLAN TODAS LAS CONDICIONES POSITIVAS.\n\nOBJETIVO CENTRAL\nCLASIFICAR: Determinar si el correo es una confirmación explícita y directa de un nuevo pedido.\nEXTRAER: Si y solo si es una confirmación de pedido, extraer el número de referencia comercial.\nREGLAS DE PROCESAMIENTO (ORDEN ESTRICTO)\n1. CONDICIÓN DE ACTIVACIÓN (GATEKEEPER):\n\nLa intención principal e inequívoca del correo debe ser la confirmación de un nuevo pedido. Busca frases clave explícitas como:\nconfirmamos su pedido\nconfirmación de pedido\nhemos recibido su pedido\nsu pedido ha sido procesado\norden de compra confirmada\nINVALIDACIÓN INMEDIATA: Si el tema central es cualquiera de los siguientes, el proceso termina y se devuelve false:\nAvisos de envío o entrega (su pedido ha sido enviado, en tránsito)\nFacturación (adjuntamos su factura, invoice)\nAlbaranes o notas de entrega\nSoporte técnico, consultas o incidencias\nPublicidad o comunicaciones comerciales\n2. ALGORITMO DE EXTRACCIÓN Y NORMALIZACIÓN (SOLO SI LA REGLA 1 ES TRUE):\n\nBÚSQUEDA: Localiza la primera cadena de texto que siga el patrón [letras/números][separador][números]. El separador puede ser una barra (/) o un guion (-).\nNORMALIZACIÓN:\nToma la referencia encontrada.\nReemplaza todos los guiones (-) por barras diagonales (/).\nSi la referencia resultante contiene más de una barra diagonal (ej: 456/99/03), trunca la cadena después de la segunda barra, conservando solo la primera parte (ej: 456/99).\nLIMPIEZA: El valor final en \"referencia\" NO DEBE contener prefijos como \"Ref:\", \"Pedido Nº\", \"#\", etc. Solo la referencia normalizada.\n3. REGLA ESPECIAL DE PROVEEDOR: DIOSSIA\n\nCONDICIÓN: Si el correo identifica al proveedor como \"Diossia\".\nLÓGICA DE PRIORIDAD: El correo puede contener tanto un \"Número de pedido\" como un \"Número de referencia\".\nIGNORA el \"Número de pedido\".\nEXTRAE exclusivamente el valor asociado a \"Número de referencia\" y aplícale el algoritmo de normalización de la regla 2.\nPROCESO LÓGICO SECUENCIAL (CHAIN OF THOUGHT OBLIGATORIO)\nAntes de generar el JSON, sigue internamente estos pasos:\n\nAnálisis de Intención: ¿Cuál es el propósito fundamental del correo? ¿Confirmar, enviar, facturar, informar?\nEvaluación de Condición Primaria: Basado en el análisis, ¿cumple con las frases clave de confirmación y no cae en ninguna categoría de invalidación? Responde (Sí/No).\nIdentificación de Proveedor (Caso Especial): ¿Se menciona a \"Diossia\"? (Sí/No).\nEjecución de Lógica:\nSi la condición primaria es \"No\", el resultado es false. Fin del proceso.\nSi la condición primaria es \"Sí\":\nSi el proveedor es \"Diossia\", aplica la Regla 3.\nSi es cualquier otro proveedor, aplica la Regla 2 estándar.\nConstrucción del JSON Final: Ensambla el objeto JSON con resultado y referencia según el paso anterior.\nEJEMPLOS DE ENTRENAMIENTO\nEjemplo 1 — Confirmación VÁLIDA (Normalización):\n\nCorreo: \"Estimado cliente, confirmamos su pedido. Su número de orden es: 456/99-03.\"\nJSON Esperado: {\"resultado\": true, \"referencia\": \"456/99\"}\n\nEjemplo 2 — Aviso de Envío (INVÁLIDO):\n\nCorreo: \"Su pedido 123-456 ha sido enviado.\"\nJSON Esperado: {\"resultado\": false, \"referencia\": null}\n\nEjemplo 3 — Factura (INVÁLIDA):\n\nCorreo: \"Adjuntamos su factura para la referencia 778/12.\"\nJSON Esperado: {\"resultado\": false, \"referencia\": null}\n\nEjemplo 4 — Confirmación con Guion (Normalización):\n\nCorreo: \"Su compra ha sido aceptada. Orden confirmada: 999-02.\"\nJSON Esperado: {\"resultado\": true, \"referencia\": \"999/02\"}\n\nEjemplo 5 — CASO ESPECIAL DIOSSIA (VÁLIDO):\n\nCorreo: \"De: Diossia. Asunto: Confirmación de Pedido. Estimado cliente, confirmamos la recepción de su orden. Número de pedido: 777123. Número de referencia: 815/44.\"\nJSON Esperado: {\"resultado\": true, \"referencia\": \"815/44\"}\n\n# NOTAS\n\n-** En caso de que venga un numero de referencia con doble / por ejemplo:\n\nref 00222//251-2222 debes tomr como numero de referencia el numero que está despues del segundo slash. En este caso sería 251-2222 y así debes aplicarlo para todos los pedidos de manera obligatoria.**\n<system_prompt>"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        100
+      ],
+      "id": "54549fa8-96be-4189-a29a-4fdc128122c2",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"resultado\": true,\n  \"referencia\": \"1245\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -760,
+        340
+      ],
+      "id": "5a83e994-d5ae-4c45-a534-99f9d5c42301",
+      "name": "Structured Output Parser2"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -1000,
+        340
+      ],
+      "id": "cbb51de1-0bdc-4530-a52b-e8ed622a54f8",
+      "name": "mini"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        340
+      ],
+      "id": "159dbde4-7d51-466b-9291-dab47238f7c0",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ebe54e78-3eb1-4979-949a-3b39f8ecfc22",
+              "name": "Resultado",
+              "value": "={{ $json.output.resultado }}",
+              "type": "string"
+            },
+            {
+              "id": "9488ff61-4619-4f3f-b6b5-81a58a6d38ab",
+              "name": "Descripción",
+              "value": "={{ $json.output.descripcion }}",
+              "type": "string"
+            },
+            {
+              "id": "daced28c-9025-4748-989f-5de6ab6f1b8d",
+              "name": "Referencia",
+              "value": "={{ $('AI Agent1').item.output.referencia }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2660,
+        120
+      ],
+      "id": "90782458-f63d-4802-87ca-371243432979",
+      "name": "vars def"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "foldersToInclude": [
+            "AQMkADgzYzBhZTU1AC0yNWI1LTQ5NmUtYmQyMy0xNmEyMzIzZWExZDUALgAAA4H-UkPlQapNt0XbTVzt24kBAHQU56hgMDNLkaCEZQJGyyQAAAIBDAAAAA=="
+          ]
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlookTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1220,
+        100
+      ],
+      "id": "3535f4ad-3611-4854-bf76-98b41fd7bc93",
+      "name": "confirmacion",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "szILXkkNbmXg5smX",
+          "name": "inko_compras"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Detele_buffer",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "bien",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "bien": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Estatus",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mal": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Pull_buffer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Creación de trabajo2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "Estatus 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Creación de trabajo": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Creación de trabajo2": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estatus": {
+      "main": [
+        [
+          {
+            "node": "Obtener data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estatus 2": {
+      "main": [
+        [
+          {
+            "node": "Obtener data 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener data": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obtener data 2": {
+      "main": [
+        [
+          {
+            "node": "push_buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sintetizar_confirmación": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Junta de archivos": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "push_buffer": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pull_buffer": {
+      "main": [
+        [
+          {
+            "node": "Sintetizar_confirmación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validando": {
+      "main": [
+        [
+          {
+            "node": "ORDEN_PEDIDO",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Junta de archivos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Chao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrado de archivos": {
+      "main": [
+        [
+          {
+            "node": "Creación de trabajo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "vars def",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ORDEN_PEDIDO": {
+      "main": [
+        [
+          {
+            "node": "Filtrado de archivos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Validando",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "mini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "vars def": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "confirmacion": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e8f57f11-f699-4563-9cda-b8306aaf8e2a",
+  "meta": {
+    "instanceId": "558d88703fb65b2d0e44613bc35916258b0f0bf983c5d4730c00c424b77ca36a"
+  },
+  "id": "plLUpa8Z2PZGdI6l",
+  "tags": [
+    {
+      "createdAt": "2025-03-14T13:58:52.826Z",
+      "updatedAt": "2025-03-14T13:58:52.826Z",
+      "id": "zXAZ0a7SMXBcTfPx",
+      "name": "youtube-tvdst"
+    }
+  ]
+}
